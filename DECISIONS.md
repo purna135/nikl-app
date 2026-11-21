@@ -61,6 +61,10 @@
 | T15 ✅ | **Feed ranking v1 is simple rules**, no machine learning (DEV_PLAN §5.6). | Enough for one city; weights tunable remotely. | After 4 weeks of real data. |
 | T16 ✅ | **Check-in QR codes are signed tokens**, so scanning works offline. | Venues often have poor signal. | – |
 | T17 ✅ | **Shared links are real web URLs** (e.g. `nikl.app/e/open-mic-14`). They open the app if it's installed, otherwise the web page. | No extra service needed. Considered: Branch.io (paid). | If we need install attribution. |
+| T18 ✅ | **Day-to-day development runs Supabase locally in Docker** (analytics services switched off to save memory). The hosted **`nikl-dev`** project (ref `ypnbsmlvcrbzqpomqlwd`) is for shared and real-phone testing. | Local is free, works offline, has test login numbers and can be reset anytime. | When a second developer joins. |
+| T19 ✅ | **Schema changes reach hosted projects only through versioned migrations** (`supabase db push`), after the founder links the project with their own Supabase login and database password. Secret keys are never shared in chat. | One source of truth for the database; no manual edits; no secrets passed around. | – |
+| T20 ✅ | **Work is committed in small commits on `main` as it's done** (founder's go-ahead, 21 Nov 2026) and pushed to GitHub. LF line endings everywhere (`.gitattributes`). | Simple while one person builds. | When a second developer joins: switch to branches + pull requests. |
+| T21 🔁 | **Code lives at [github.com/purna135/nikl-app](https://github.com/purna135/nikl-app), public for now** (founder's choice). No keys or passwords are in the repo, but the plans, decisions and prototypes are readable by anyone. | Free CI and easy sharing. Considered: private repo, a GitHub organization. | **Before sharing sensitive business details, and before launch:** make it private and consider moving it to an organization. |
 
 ## Data, privacy & security (S)
 
@@ -68,7 +72,7 @@
 |---|---|---|---|
 | S1 ✅ | **Money is integer paise** (`19900` = ₹199), never decimals. | No rounding errors. | – |
 | S2 ✅ | **Times are stored in UTC and shown in IST**, whatever the phone's timezone. | One source of truth; correct for every user. | When expanding outside India. |
-| S3 ✅ | **Phone numbers are stored as `+91XXXXXXXXXX`.** | One format everywhere. | – |
+| S3 ✅ | **Phone numbers are stored as `+91XXXXXXXXXX`.** Supabase Auth keeps them without the `+`, so the signup trigger adds it, and a database check rejects any other format in `profiles_private`. | One format everywhere. | – |
 | S4 ✅ | **Phone number and year of birth live in an owner-only `profiles_private` table.** The public `profiles` table has no phone. **Razorpay account details** live in an admin-only `club_payout_settings` table. | Profiles are publicly readable, so a phone column there would expose every user's number. | – |
 | S5 ✅ | **The apps can't write bookings, payments, refunds, payouts, tickets, the waitlist or the audit log.** Only server functions can. Row-level security is on all 30 tables. Column rules stop the apps changing seats taken, tickets sold, verified status, KYC status, ratings or moderation status. | Money and seats must change only in one trusted place. Tested: a signed-in user is blocked from all of these. | – |
 | S6 ✅ | **User posts start as "pending"** and go through automated checks. Report and block exist from day one. | Safety; also an App Store requirement for apps with user posts. | When moderation volume grows. |
@@ -110,6 +114,8 @@
 | **Under-18 users** | Stay 18+, or build a parental-consent flow. | After launch. |
 | **Who builds** | A hired team as in DEV_PLAN §7, or mostly Claude with a smaller team. | Before week 2. |
 | Open technical questions | See DEV_PLAN §10. | Week 2. |
+| **Who can create a club page during the beta** | (a) Anyone, but new pages stay hidden until Nikl approves them (recommended: protects quality and safety during the beta). (b) Anyone, live instantly. (c) Invite-only: Nikl creates pages for launch partners. | **Before week 2 starts.** |
+| **Email sign-up on hosted projects** | Supabase turns email login on by default; Nikl is phone-only (T6). Switch it off when phone login is enabled there. | When MSG91 is ready. |
 
 ## Replaced or rejected
 
@@ -129,4 +135,7 @@
 
 ## Change history
 
+- **21 Nov 2026:** Added T21 (GitHub repo `purna135/nikl-app`, public for now).
+- **21 Nov 2026:** S3 now enforced in the database (migration `20261121010000_phone_e164`). Added the open question about who can create club pages during the beta.
+- **21 Nov 2026:** Added T18–T20 (local Supabase in Docker, migrations-only changes to hosted projects, commit-as-you-go). Added the open question about email sign-up on hosted projects.
 - **21 Nov 2026:** Log created with every decision from planning, the three prototypes, organizer mode and week-1 setup.

@@ -41,4 +41,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Starts Postgres in Docker and applies supabase/migrations + seed.sql
       - run: pnpm exec supabase db start
-      - run: pnpm exec supabase db lint --level error
+      # Only our schema: PostGIS's own functions in `extensions` trip the linter
+      - run: pnpm exec supabase db lint --schema public --level warning

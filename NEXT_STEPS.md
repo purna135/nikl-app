@@ -19,36 +19,64 @@ Secrets go in your **password manager** and the service's own settings page (Sup
 
 ---
 
+## What Claude needs to start week 2
+
+Week 2 builds clubs, venues and events, the organizer web dashboard (create and edit events, weekly repeats), event pages, server-side login on the web, profile set-up, and **create event from poster**.
+
+| # | What | Blocking? |
+|---|---|---|
+| 1 | **Decide who can create a club page during the beta** (see the open question in [DECISIONS.md](DECISIONS.md#open-questions)). | Yes, it shapes the organizer sign-up flow. |
+| 2 | ~~Say where the GitHub repo should live~~ ✅ done: `purna135/nikl-app`. | – |
+| 3 | **Store the Anthropic key yourself** (1.6) so poster reading runs for real. Until then Claude builds it against a stand-in. | No. |
+
+---
+
 ## 1. This week: unblocks development (about 45 minutes in total)
 
-### 1.1 Install Docker Desktop (15 min) — *needed to run the database on your PC*
-- [ ] Download **Docker Desktop for Windows** from docker.com (Products → Docker Desktop).
-- [ ] Run the installer and keep **"Use WSL 2"** ticked. Restart if asked.
-- [ ] Open Docker Desktop once and wait until it shows **Engine running**.
-- [ ] Tell Claude **"Docker is installed"**.
+### 1.1 Install Docker Desktop (15 min) — ✅ done 21 Nov 2026
+- [x] Download **Docker Desktop for Windows** from docker.com (Products → Docker Desktop).
+- [x] Run the installer and keep **"Use WSL 2"** ticked. Restart if asked.
+- [x] Open Docker Desktop once and wait until it shows **Engine running**.
+- [x] Tell Claude **"Docker is installed"**.
+
+*Keep Docker Desktop running while Claude works on the app. It's what runs the local database.*
 
 Claude then: starts the local database, fills in the local env files, tests phone login end to end on the web, and generates the database types.
 *Docker Desktop is free for personal use and small businesses (under 250 employees and under $10M revenue).*
 
 ### 1.2 Try the app on your phone (5 min) — *optional but recommended*
 - [ ] Install **Expo Go** from the Play Store on your Android phone.
-- [ ] Keep the phone on the same Wi-Fi as your PC.
-- [ ] When Claude starts the mobile dev server, scan the QR code with Expo Go.
+- [ ] Keep the phone on the same Wi-Fi as your PC, and keep Docker Desktop running.
+- [ ] In PowerShell in the project folder, run `pnpm dev:mobile`, then scan the QR code with Expo Go.
+- [ ] Go to the **You** tab → **Log in with your phone** → number `98765 43210`, code `123456`.
+- [ ] If Windows asks whether to allow access on private networks, click **Allow** (the phone needs to reach the local database).
 
-### 1.3 GitHub repository (2 min)
-- [ ] Decide where the code lives:
-  - **Your personal account** (simplest), or
-  - **A free organization** (better once others join): github.com → **+** → **New organization** → Free → name it, e.g. `nikl-app`.
-- [ ] Tell Claude **"create a private repo under ___"**. Claude creates it, makes the first commit, pushes, and CI runs.
+*The app on your phone talks to the database through your PC's Wi-Fi address (192.168.1.199, set in `apps/mobile/.env`). If your router gives the PC a new address, Claude updates that file.*
 
-### 1.4 Supabase project for development (10 min)
-- [ ] Go to **supabase.com** → Sign up (GitHub login is fine).
-- [ ] Create an organization called **Nikl**.
-- [ ] **New project** → name `nikl-dev` → region **South Asia (Mumbai)** → generate a strong database password and **save it in your password manager**.
-- [ ] Wait about 2 minutes for it to start. Open **Project Settings → API Keys** (or **Data API**).
-- [ ] Send Claude the **Project URL** and the **publishable key**. **Don't** send the secret/service_role key or the database password.
+### 1.3 GitHub repository (2 min) — ✅ done 21 Nov 2026: https://github.com/purna135/nikl-app
+- [x] You created `purna135/nikl-app`. It's **public for now**: anyone can read the code and the plans (PLAN, DEV_PLAN, DECISIONS). No keys or passwords are in the repo.
+- [x] Claude pushes each verified commit, and CI runs on every push.
+- [ ] Later: make it private (GitHub → repo → **Settings** → **General** → scroll to **Danger Zone** → **Change visibility**). Moving it to a GitHub organization when others join is also easy (**Transfer ownership** in the same place).
+
+### 1.4 Supabase project for development (10 min) — ✅ created 21 Nov 2026 (ref `ypnbsmlvcrbzqpomqlwd`)
+- [x] Go to **supabase.com** → Sign up (GitHub login is fine).
+- [x] Create an organization called **Nikl**.
+- [x] **New project** → name `nikl-dev` → region **South Asia (Mumbai)** → generate a strong database password and **save it in your password manager**.
+- [x] Wait about 2 minutes for it to start. Open **Project Settings → API Keys** (or **Data API**).
+- [x] Send Claude the **Project URL** and the **publishable key**. **Don't** send the secret/service_role key or the database password.
 
 *The free plan pauses projects after about a week of no activity, which is fine for development. Production will need the paid plan.*
+
+### 1.4b Link the Supabase project so Claude can push the database to it (5 min) — ✅ done 21 Nov 2026
+Linking lets Claude copy the tables and sample data to the hosted project, using **your** login. No secret key goes through chat.
+- [x] Open **PowerShell** in `D:\Product Development\Club App` (in File Explorer: open the folder, type `powershell` in the address bar, press Enter).
+- [x] Run `pnpm exec supabase login`. A browser tab opens. Click **Authorize**, then go back to PowerShell.
+- [x] Run `pnpm exec supabase link --project-ref ypnbsmlvcrbzqpomqlwd`. When it asks for the **database password**, paste the one you saved (the screen won't show it as you type).
+- [x] Tell Claude **"linked"**. Claude ran `supabase db push`: both migrations and the sample data are now on `nikl-dev`.
+
+**You don't need to share the Supabase secret key.** Server functions get it from Supabase automatically, and CI deploys will use a token you add yourself in GitHub settings.
+
+*Phone login on the hosted project stays off until MSG91 is ready (2.3). Until then, login is tested on the local database with the test numbers.*
 
 ### 1.5 Mapbox token (5 min) — *for the map in week 3*
 - [ ] **account.mapbox.com** → Sign up. It may ask for a card; the free tier covers development.
@@ -58,7 +86,10 @@ Claude then: starts the local database, fills in the local env files, tests phon
 ### 1.6 Anthropic API key (10 min) — *for "create event from poster" in week 2*
 - [ ] **console.anthropic.com** → Sign up → **Billing**: add a small amount of credit.
 - [ ] **API Keys** → **Create key** → name it `nikl-dev` → save it in your password manager.
-- [ ] **Don't paste it in chat.** When the poster function is ready, Claude gives you the one command to store it as a Supabase secret.
+- [ ] **Don't paste it in chat.** Store it yourself:
+  - For the hosted project, in PowerShell in the project folder: `pnpm exec supabase secrets set ANTHROPIC_API_KEY=` followed by your key (no spaces).
+  - For local testing, create a file `supabase\functions\.env` containing one line: `ANTHROPIC_API_KEY=` followed by your key. Git ignores this file.
+- [ ] Tell Claude **"Anthropic key stored"**.
 
 ---
 

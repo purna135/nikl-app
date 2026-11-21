@@ -1,5 +1,7 @@
 # Nikl
 
+[![CI](https://github.com/purna135/nikl-app/actions/workflows/ci.yml/badge.svg)](https://github.com/purna135/nikl-app/actions/workflows/ci.yml)
+
 Events, activities and clubs in your city, starting with Bhubaneswar. People can discover what's on (feed + map), book with UPI, follow clubs and go with friends. Clubs get a page, a dashboard, check-in and payouts.
 
 - Product plan: [PLAN.md](PLAN.md)

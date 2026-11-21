@@ -282,12 +282,14 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 |---|---|
 | Monorepo (Turborepo + **pnpm 12**, isolated installs) with `apps/web`, `apps/mobile`, `packages/{tokens,utils,validation,supabase}` | ✅ Done |
 | Versions in use | Next.js **16.4** (Cache Components on), Expo **SDK 58** / React Native 0.88 / Expo Router, React 19.3, TypeScript 6.0, supabase-js 2.119, Supabase CLI 2.122 |
-| Schema v1: 30 P0 tables, RLS on every table, 66 policies, Bhubaneswar seed | ✅ Applied and tested on PGlite + PostGIS. Not yet run on a real Supabase stack (needs Docker). |
-| Phone OTP login (shared helpers, web + mobile screens) | ✅ Built. Validation and error handling checked in the browser. **End-to-end login needs a running Supabase**: local test numbers 98765 43210 / 99999 99999, code 123456. |
+| Schema v1: 30 P0 tables, RLS on every table, 66 policies, Bhubaneswar seed | ✅ Running on local Supabase (Postgres 17, PostGIS 3.3) and **pushed to the hosted `nikl-dev` project** with seed data. `db lint` on `public`: no issues. Follow-up migration stores phones as `+91…` (S3). |
+| Phone OTP login (shared helpers, web + mobile screens) | ✅ **Works end to end on the web against local Supabase** (test number → code → account page). Signup creates the profile; phone is only in `profiles_private`; logged-out visitors can't read it or create bookings. Mobile login is built and bundles, but hasn't been tried on a phone yet. |
+| Typed database access | ✅ `packages/supabase/src/database.types.ts` generated from the local database (`pnpm db:types`). |
 | App shell (Home · Explore · Tickets · You) + web shell (home, login, account) | ✅ Done |
 | CI (GitHub Actions: typecheck, lint, tests, web build, migrations) | ✅ Written. Runs on the first push to GitHub. |
 | Checks run locally | typecheck + lint + 16 unit tests pass; `next build` passes (all pages static); Android bundle exports; `expo-doctor` 20/20 |
-| Dev / staging / prod Supabase projects, EAS project, Vercel project | ⏳ Need accounts (founder action) |
+| Hosted Supabase `nikl-dev` (ref `ypnbsmlvcrbzqpomqlwd`) | ✅ Created by the founder, linked and migrated. Phone login there stays off until MSG91 is ready. |
+| Staging / prod Supabase projects, EAS project, Vercel project, GitHub repo | ⏳ Need accounts / founder decisions (see NEXT_STEPS.md) |
 
 Decisions made during setup:
 - Phone numbers and year of birth sit in an owner-only `profiles_private` table, and Razorpay details in an admin-only `club_payout_settings` table. `profiles` itself is public.
