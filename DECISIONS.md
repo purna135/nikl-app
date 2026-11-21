@@ -27,6 +27,7 @@
 | P11 ✅ | Accounts are **18+ at launch**. | Avoids the DPDP Act's verifiable-parental-consent rules for minors. | When we build a proper under-18 consent flow. |
 | P12 ✅ | **Priorities.** **P0 (launch):** feed, club + "Your plans" stories, user posts, Explore (map), event page, booking + UPI, tickets, club profiles, activity, organizer tools. **P1 (~2 months after):** squad chat with pay-your-own-share, comments, **Moments** (video), memberships, reviews. **P2:** 1:1 messages, attendee-made Moments. | Keeps launch at ~12 weeks. Video is the biggest cost item. | After launch metrics. |
 | P13 ✅ | The group feature is called **"Squads"**. | "Khati" was suggested for it and dropped along with the name. | – |
+| P15 🔁 | **Anyone can create a club page, but it stays hidden until a Nikl admin approves it** (founder's decision, 21 Nov 2026). Until approval, the club, its events, posts and stories are visible only to its own team and Nikl admins. Organizers can still prepare and "publish" events, which go live the moment the club is approved. Approval is separate from the **verified** badge, which needs KYC. | Keeps beta quality high and blocks fake pages, without making organizers wait to set things up. Considered: live instantly; invite-only. | After the beta: consider auto-approving clubs that pass KYC. |
 | P14 ✅ | **Pay-your-own-share** (P1): a squad holds seats for 2 hours and each member pays their own share through a payment link. Nikl never pools money. | Nobody chases friends for money, and no money is held by Nikl. | When building squads (P1). |
 
 ## Experience & design (D)
@@ -114,7 +115,6 @@
 | **Under-18 users** | Stay 18+, or build a parental-consent flow. | After launch. |
 | **Who builds** | A hired team as in DEV_PLAN §7, or mostly Claude with a smaller team. | Before week 2. |
 | Open technical questions | See DEV_PLAN §10. | Week 2. |
-| **Who can create a club page during the beta** | (a) Anyone, but new pages stay hidden until Nikl approves them (recommended: protects quality and safety during the beta). (b) Anyone, live instantly. (c) Invite-only: Nikl creates pages for launch partners. | **Before week 2 starts.** |
 | **Email sign-up on hosted projects** | Supabase turns email login on by default; Nikl is phone-only (T6). Switch it off when phone login is enabled there. | When MSG91 is ready. |
 
 ## Replaced or rejected
@@ -135,6 +135,7 @@
 
 ## Change history
 
+- **21 Nov 2026:** Decided P15 (anyone can create a club page; hidden until Nikl approves). Removed it from open questions.
 - **21 Nov 2026:** Added T21 (GitHub repo `purna135/nikl-app`, public for now).
 - **21 Nov 2026:** S3 now enforced in the database (migration `20261121010000_phone_e164`). Added the open question about who can create club pages during the beta.
 - **21 Nov 2026:** Added T18–T20 (local Supabase in Docker, migrations-only changes to hosted projects, commit-as-you-go). Added the open question about email sign-up on hosted projects.

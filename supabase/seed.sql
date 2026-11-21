@@ -159,3 +159,6 @@ insert into public.badges (id, name, description, icon) values
   ('explorer',    'Explorer',    'Tried 6 different categories',    '🧭'),
   ('squad_goals', 'Squad Goals', 'Planned 3 outings with friends',  '👯')
 on conflict (id) do nothing;
+
+-- Sample clubs were set up by Nikl, so they start approved (DECISIONS.md P15)
+update public.clubs set review_status = 'approved', reviewed_at = now() where review_status = 'pending';

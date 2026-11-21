@@ -177,19 +177,25 @@ isOneToOne: true
                   ]
                 },"clubs": {
                   Row: {
-                    "area": string | null,"bio": string | null,"category": string,"cover_url": string | null,"created_at": string,"created_by": string | null,"handle": string,"id": string,"kind": string | null,"kyc_status": Database["public"]['Enums']["kyc_status"],"location": unknown,"logo_url": string | null,"name": string,"rating_avg": number | null,"rating_count": number,"updated_at": string,"verified": boolean
+                    "area": string | null,"bio": string | null,"category": string,"cover_url": string | null,"created_at": string,"created_by": string | null,"handle": string,"id": string,"kind": string | null,"kyc_status": Database["public"]['Enums']["kyc_status"],"location": unknown,"logo_url": string | null,"name": string,"rating_avg": number | null,"rating_count": number,"review_note": string | null,"review_status": Database["public"]['Enums']["club_review_status"],"reviewed_at": string | null,"reviewed_by": string | null,"updated_at": string,"verified": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "area"?: string | null,"bio"?: string | null,"category": string,"cover_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"handle": string,"id"?: string,"kind"?: string | null,"kyc_status"?: Database["public"]['Enums']["kyc_status"],"location"?: unknown,"logo_url"?: string | null,"name": string,"rating_avg"?: number | null,"rating_count"?: number,"updated_at"?: string,"verified"?: boolean
+                    "area"?: string | null,"bio"?: string | null,"category": string,"cover_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"handle": string,"id"?: string,"kind"?: string | null,"kyc_status"?: Database["public"]['Enums']["kyc_status"],"location"?: unknown,"logo_url"?: string | null,"name": string,"rating_avg"?: number | null,"rating_count"?: number,"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["club_review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"updated_at"?: string,"verified"?: boolean
                   }
                   Update: {
-                    "area"?: string | null,"bio"?: string | null,"category"?: string,"cover_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"handle"?: string,"id"?: string,"kind"?: string | null,"kyc_status"?: Database["public"]['Enums']["kyc_status"],"location"?: unknown,"logo_url"?: string | null,"name"?: string,"rating_avg"?: number | null,"rating_count"?: number,"updated_at"?: string,"verified"?: boolean
+                    "area"?: string | null,"bio"?: string | null,"category"?: string,"cover_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"handle"?: string,"id"?: string,"kind"?: string | null,"kyc_status"?: Database["public"]['Enums']["kyc_status"],"location"?: unknown,"logo_url"?: string | null,"name"?: string,"rating_avg"?: number | null,"rating_count"?: number,"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["club_review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"updated_at"?: string,"verified"?: boolean
                   }
                   Relationships: [
                     {
       foreignKeyName: "clubs_created_by_fkey"
       columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clubs_reviewed_by_fkey"
+      columns: ["reviewed_by"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -350,6 +356,26 @@ isOneToOne: false
       columns: ["club_id"]
 isOneToOne: false
       referencedRelation: "clubs"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"platform_admins": {
+                  Row: {
+                    "created_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "platform_admins_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -731,6 +757,15 @@ isOneToOne: false
 "can_staff_occurrence":
 { Args: { "occ": string }; Returns: boolean
                            },
+"club_is_live":
+{ Args: { "club": string }; Returns: boolean
+                           },
+"create_club":
+{ Args: { "p_area"?: string,"p_bio"?: string,"p_category": string,"p_handle": string,"p_kind"?: string,"p_name": string }; Returns: string
+                           },
+"create_event":
+{ Args: { "p_capacity"?: number,"p_category": string,"p_club_id": string,"p_description"?: string,"p_ends_at"?: string,"p_poster_url"?: string,"p_publish"?: boolean,"p_repeat_weeks"?: number,"p_starts_at": string,"p_tags"?: (string)[],"p_tiers"?: Json,"p_title": string,"p_venue_address"?: string,"p_venue_area"?: string,"p_venue_id"?: string,"p_venue_name"?: string }; Returns: string
+                           },
 "event_visible":
 { Args: { "ev": string }; Returns: boolean
                            },
@@ -743,12 +778,48 @@ isOneToOne: false
 "is_club_staff":
 { Args: { "club": string }; Returns: boolean
                            },
+"is_platform_admin":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_valid_category":
+{ Args: { "c": string }; Returns: boolean
+                           },
 "occurrence_visible":
 { Args: { "occ": string }; Returns: boolean
-                           }
+                           },
+"review_club":
+{ Args: { "p_club_id": string,"p_decision": Database["public"]['Enums']["club_review_status"],"p_note"?: string }; Returns: {
+              "area": string | null,
+"bio": string | null,
+"category": string,
+"cover_url": string | null,
+"created_at": string,
+"created_by": string | null,
+"handle": string,
+"id": string,
+"kind": string | null,
+"kyc_status": Database["public"]['Enums']["kyc_status"],
+"location": unknown,
+"logo_url": string | null,
+"name": string,
+"rating_avg": number | null,
+"rating_count": number,
+"review_note": string | null,
+"review_status": Database["public"]['Enums']["club_review_status"],
+"reviewed_at": string | null,
+"reviewed_by": string | null,
+"updated_at": string,
+"verified": boolean
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "clubs"
+        isOneToOne: true
+        isSetofReturn: false
+      } }
           }
           Enums: {
-            "author_type": "club"|"user","booking_status": "held"|"payment_pending"|"failed"|"paid"|"confirmed"|"expired"|"late_paid"|"cancel_requested"|"refunded"|"checked_in","club_member_status": "invited"|"active"|"removed","club_role": "owner"|"admin"|"checkin","event_status": "draft"|"published"|"cancelled"|"ended","follow_target": "club"|"user","kyc_status": "not_started"|"pending"|"verified"|"rejected","moderation_status": "pending"|"approved"|"rejected"|"flagged","occurrence_status": "scheduled"|"cancelled"|"ended","payment_status": "created"|"authorized"|"captured"|"failed"|"refunded"|"partially_refunded","payout_status": "pending"|"on_hold"|"processed"|"reversed"|"failed","post_kind": "photo"|"event"|"going","refund_status": "pending"|"processed"|"failed","report_status": "open"|"reviewing"|"actioned"|"dismissed","report_target": "post"|"story"|"user"|"club"|"event","story_kind": "event_auto"|"custom"|"your_plan","ticket_status": "valid"|"used"|"void","visibility": "public"|"friends"|"unlisted"|"private"
+            "author_type": "club"|"user","booking_status": "held"|"payment_pending"|"failed"|"paid"|"confirmed"|"expired"|"late_paid"|"cancel_requested"|"refunded"|"checked_in","club_member_status": "invited"|"active"|"removed","club_review_status": "pending"|"approved"|"rejected"|"suspended","club_role": "owner"|"admin"|"checkin","event_status": "draft"|"published"|"cancelled"|"ended","follow_target": "club"|"user","kyc_status": "not_started"|"pending"|"verified"|"rejected","moderation_status": "pending"|"approved"|"rejected"|"flagged","occurrence_status": "scheduled"|"cancelled"|"ended","payment_status": "created"|"authorized"|"captured"|"failed"|"refunded"|"partially_refunded","payout_status": "pending"|"on_hold"|"processed"|"reversed"|"failed","post_kind": "photo"|"event"|"going","refund_status": "pending"|"processed"|"failed","report_status": "open"|"reviewing"|"actioned"|"dismissed","report_target": "post"|"story"|"user"|"club"|"event","story_kind": "event_auto"|"custom"|"your_plan","ticket_status": "valid"|"used"|"void","visibility": "public"|"friends"|"unlisted"|"private"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -868,7 +939,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "author_type": ["club", "user"],"booking_status": ["held", "payment_pending", "failed", "paid", "confirmed", "expired", "late_paid", "cancel_requested", "refunded", "checked_in"],"club_member_status": ["invited", "active", "removed"],"club_role": ["owner", "admin", "checkin"],"event_status": ["draft", "published", "cancelled", "ended"],"follow_target": ["club", "user"],"kyc_status": ["not_started", "pending", "verified", "rejected"],"moderation_status": ["pending", "approved", "rejected", "flagged"],"occurrence_status": ["scheduled", "cancelled", "ended"],"payment_status": ["created", "authorized", "captured", "failed", "refunded", "partially_refunded"],"payout_status": ["pending", "on_hold", "processed", "reversed", "failed"],"post_kind": ["photo", "event", "going"],"refund_status": ["pending", "processed", "failed"],"report_status": ["open", "reviewing", "actioned", "dismissed"],"report_target": ["post", "story", "user", "club", "event"],"story_kind": ["event_auto", "custom", "your_plan"],"ticket_status": ["valid", "used", "void"],"visibility": ["public", "friends", "unlisted", "private"]
+            "author_type": ["club", "user"],"booking_status": ["held", "payment_pending", "failed", "paid", "confirmed", "expired", "late_paid", "cancel_requested", "refunded", "checked_in"],"club_member_status": ["invited", "active", "removed"],"club_review_status": ["pending", "approved", "rejected", "suspended"],"club_role": ["owner", "admin", "checkin"],"event_status": ["draft", "published", "cancelled", "ended"],"follow_target": ["club", "user"],"kyc_status": ["not_started", "pending", "verified", "rejected"],"moderation_status": ["pending", "approved", "rejected", "flagged"],"occurrence_status": ["scheduled", "cancelled", "ended"],"payment_status": ["created", "authorized", "captured", "failed", "refunded", "partially_refunded"],"payout_status": ["pending", "on_hold", "processed", "reversed", "failed"],"post_kind": ["photo", "event", "going"],"refund_status": ["pending", "processed", "failed"],"report_status": ["open", "reviewing", "actioned", "dismissed"],"report_target": ["post", "story", "user", "club", "event"],"story_kind": ["event_auto", "custom", "your_plan"],"ticket_status": ["valid", "used", "void"],"visibility": ["public", "friends", "unlisted", "private"]
           }
         }
 } as const

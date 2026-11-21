@@ -43,3 +43,5 @@ jobs:
       - run: pnpm exec supabase db start
       # Only our schema: PostGIS's own functions in `extensions` trip the linter
       - run: pnpm exec supabase db lint --schema public --level warning
+      # pgTAP tests in supabase/tests (access rules, club approval, event creation)
+      - run: pnpm exec supabase test db
