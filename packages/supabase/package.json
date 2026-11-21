@@ -1,0 +1,19 @@
+{
+  "name": "@nikl/supabase",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Typed Supabase client factory and auth helpers shared by the web and mobile apps.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nikl/validation": "workspace:*",
+    "@supabase/supabase-js": "^2.50.0"
+  }
+}

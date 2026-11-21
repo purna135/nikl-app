@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm blocks dependency install scripts unless allowed here.
+# The Supabase CLI downloads its binary; esbuild/sharp fetch native builds.
+allowBuilds:
+  supabase: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
