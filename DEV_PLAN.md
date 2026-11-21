@@ -291,6 +291,20 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 | Hosted Supabase `nikl-dev` (ref `ypnbsmlvcrbzqpomqlwd`) | ✅ Created by the founder, linked and migrated. Phone login there stays off until MSG91 is ready. |
 | Staging / prod Supabase projects, EAS project, Vercel project, GitHub repo | ⏳ Need accounts / founder decisions (see NEXT_STEPS.md) |
 
+### Week 2 status (21 Nov 2026): organizers can create events
+
+| Item | Status |
+|---|---|
+| Club pages with Nikl approval (P15): create page → hidden until approved → admin approves → club, events, posts and stories go public | ✅ Built and tested end to end in the browser |
+| Organizer web dashboard: club status, events list, create event (poster, details, weekly repeats, free/paid tiers, draft/publish), manage event (edit details, publish/draft/cancel/restore, cancel single dates) | ✅ Built and tested in the browser |
+| Nikl admin page: review queue, approve / ask for changes (with note), audit log | ✅ Built and tested |
+| Server-side sessions on the web (proxy refreshes cookies; pages read the user inside `<Suspense>`) | ✅ |
+| Poster-to-event (Supabase Edge Function `extract-event`, Claude Haiku 5.5 with structured output, verified login, 30 reads per person per day) | ✅ Built. Login, ownership and limit checks tested. **The real Claude call hasn't run yet**: it needs your Anthropic key. Locally it returns sample details. |
+| Mobile profile set-up after first login (name, username, area, 3+ interests, birth year for 18+) | ✅ Built, typechecks. Not yet tried on a phone. |
+| Database tests (pgTAP): 27 tests for club approval, event creation and profile rules, run in CI | ✅ |
+| Independent code review (T22): 9 findings (5 important: poster function auth, open redirect, poster URLs, restore event, duplicate interests), **all fixed** | ✅ |
+| Public event and club pages, map | ⏳ Week 3 |
+
 Decisions made during setup:
 - Phone numbers and year of birth sit in an owner-only `profiles_private` table, and Razorpay details in an admin-only `club_payout_settings` table. `profiles` itself is public.
 - The web app reads the session in the browser for week 1. Server-side session checks (behind `<Suspense>`, as Cache Components requires) arrive with the organizer dashboard in week 2.

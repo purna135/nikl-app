@@ -28,6 +28,7 @@
 | P12 ✅ | **Priorities.** **P0 (launch):** feed, club + "Your plans" stories, user posts, Explore (map), event page, booking + UPI, tickets, club profiles, activity, organizer tools. **P1 (~2 months after):** squad chat with pay-your-own-share, comments, **Moments** (video), memberships, reviews. **P2:** 1:1 messages, attendee-made Moments. | Keeps launch at ~12 weeks. Video is the biggest cost item. | After launch metrics. |
 | P13 ✅ | The group feature is called **"Squads"**. | "Khati" was suggested for it and dropped along with the name. | – |
 | P15 🔁 | **Anyone can create a club page, but it stays hidden until a Nikl admin approves it** (founder's decision, 21 Nov 2026). Until approval, the club, its events, posts and stories are visible only to its own team and Nikl admins. Organizers can still prepare and "publish" events, which go live the moment the club is approved. Approval is separate from the **verified** badge, which needs KYC. | Keeps beta quality high and blocks fake pages, without making organizers wait to set things up. Considered: live instantly; invite-only. | After the beta: consider auto-approving clubs that pass KYC. |
+| P16 🔁 | **After the first login, people set up a profile before anything else:** name, username, area, at least 3 interests and **birth year** (18+ check, P11). Birth year is private. | Interests power the feed; the 18+ rule needs an age. Birth year alone means someone turning 18 later this year passes a few months early. | If we need exact age checks (e.g. for 18+ events): ask for full date of birth. |
 | P14 ✅ | **Pay-your-own-share** (P1): a squad holds seats for 2 hours and each member pays their own share through a payment link. Nikl never pools money. | Nobody chases friends for money, and no money is held by Nikl. | When building squads (P1). |
 
 ## Experience & design (D)
@@ -65,6 +66,7 @@
 | T18 ✅ | **Day-to-day development runs Supabase locally in Docker** (analytics services switched off to save memory). The hosted **`nikl-dev`** project (ref `ypnbsmlvcrbzqpomqlwd`) is for shared and real-phone testing. | Local is free, works offline, has test login numbers and can be reset anytime. | When a second developer joins. |
 | T19 ✅ | **Schema changes reach hosted projects only through versioned migrations** (`supabase db push`), after the founder links the project with their own Supabase login and database password. Secret keys are never shared in chat. | One source of truth for the database; no manual edits; no secrets passed around. | – |
 | T20 ✅ | **Work is committed in small commits on `main` as it's done** (founder's go-ahead, 21 Nov 2026) and pushed to GitHub. LF line endings everywhere (`.gitattributes`). | Simple while one person builds. | When a second developer joins: switch to branches + pull requests. |
+| T22 ✅ | **Every chunk of work gets an independent code review before it's committed**, and the findings are fixed first (founder's rule, 21 Nov 2026). Order: build → typecheck, lint, tests → independent review → fix → re-check → commit and push. | Catches bugs and security slips a single pass misses, especially with a public repo. | When a second developer joins: reviews move into pull requests. |
 | T21 🔁 | **Code lives at [github.com/purna135/nikl-app](https://github.com/purna135/nikl-app), public for now** (founder's choice). No keys or passwords are in the repo, but the plans, decisions and prototypes are readable by anyone. | Free CI and easy sharing. Considered: private repo, a GitHub organization. | **Before sharing sensitive business details, and before launch:** make it private and consider moving it to an organization. |
 
 ## Data, privacy & security (S)
@@ -79,6 +81,8 @@
 | S6 ✅ | **User posts start as "pending"** and go through automated checks. Report and block exist from day one. | Safety; also an App Store requirement for apps with user posts. | When moderation volume grows. |
 | S7 ✅ | **Data stays in India** (Mumbai region). Card/UPI details never touch our servers. | DPDP Act; Razorpay checkout handles payment data. | – |
 | S8 ✅ | **Organizers never see attendees' phone numbers.** | Privacy; organizers message attendees through the app. | – |
+| S10 ✅ | **AI features need a verified login and have a daily limit per person** (poster reading: 30 a day, changeable with `POSTER_AI_DAILY_LIMIT`). The count is kept server-side, so apps can't raise it. | Claude calls cost money; a public endpoint could be abused. | When usage data shows a better limit. |
+| S11 ✅ | **Posters must be uploads in Nikl's own storage** (each person's own folder). Event pages never show images from other websites. | Stops tracking pixels and unmoderated images. | When we add image moderation (week 5). |
 | S9 ✅ | **Secrets never go in `NEXT_PUBLIC_*` / `EXPO_PUBLIC_*` variables or in git.** `.env` files are ignored by git. | Anything public is visible to everyone. | – |
 
 ## Business & payments (B)
@@ -135,6 +139,7 @@
 
 ## Change history
 
+- **21 Nov 2026:** Added T22 (independent review before every commit), P16 (profile set-up after first login), S10 (verified login + daily limit for AI), S11 (posters only from our storage). T8 in practice: poster reading uses Claude Haiku 5.5 by default, switchable with `POSTER_AI_MODEL`.
 - **21 Nov 2026:** Decided P15 (anyone can create a club page; hidden until Nikl approves). Removed it from open questions.
 - **21 Nov 2026:** Added T21 (GitHub repo `purna135/nikl-app`, public for now).
 - **21 Nov 2026:** S3 now enforced in the database (migration `20261121010000_phone_e164`). Added the open question about who can create club pages during the beta.

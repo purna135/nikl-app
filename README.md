@@ -54,6 +54,10 @@ pnpm db:types          # generates typed database types into packages/supabase
 
 Supabase Studio (table viewer) runs at http://127.0.0.1:54323 while the database is up.
 
+### Server functions (poster reading)
+
+Local settings go in `supabase/functions/.env` (git-ignored). Without `ANTHROPIC_API_KEY`, set `POSTER_AI_MOCK=true` to get sample details. For the hosted project: `pnpm exec supabase secrets set ANTHROPIC_API_KEY=...`.
+
 ### Run the apps
 
 ```powershell
@@ -71,6 +75,8 @@ pnpm dev:mobile        # Expo: press a for Android, or scan the QR with Expo Go
 | `pnpm build` | Production build of the web app |
 | `pnpm db:reset` | Rebuilds the local database from migrations + seed |
 | `pnpm db:types` | Regenerates database types after a migration |
+| `pnpm db:test` | Database tests (pgTAP, in `supabase/tests`): access rules, club approval, events, profiles |
+| `pnpm exec supabase functions serve --env-file supabase/functions/.env` | Runs server functions locally (e.g. poster reading) |
 
 CI (GitHub Actions) runs typecheck, lint, tests and the web build on every pull request, and checks that the migrations apply.
 
@@ -85,6 +91,6 @@ CI (GitHub Actions) runs typecheck, lint, tests and the web build on every pull 
 - **Web:** Next 16 with Cache Components. Reading cookies on the server must happen inside a `<Suspense>` boundary (see `apps/web/AGENTS.md` and the docs in `node_modules/next/dist/docs/`).
 - Secrets never go in `NEXT_PUBLIC_*` or `EXPO_PUBLIC_*` variables.
 
-## Next up (week 2)
+## Status
 
-Clubs, venues, events and occurrences; the organizer web dashboard (create/edit events); poster-to-event AI; server-side sessions on the web.
+Weeks 1–2 done: login, organizer dashboard, club approval, events with weekly repeats and tickets, poster-to-event, profile set-up. Next (week 3): Explore with the map as default, search and filters, public event pages. Details in DEV_PLAN.md §7.

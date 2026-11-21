@@ -14,8 +14,8 @@ export const supabaseConfigured = isConfigured(env);
  * The app's Supabase client, or null until apps/mobile/.env is filled in.
  * The session is stored with expo-sqlite's localStorage (Expo's recommended setup).
  */
-export const supabase: NiklClient | null = supabaseConfigured
-  ? createNiklClient(env as Required<typeof env>, {
+export const supabase: NiklClient | null = isConfigured(env)
+  ? createNiklClient(env, {
       auth: {
         storage: localStorage,
         autoRefreshToken: true,

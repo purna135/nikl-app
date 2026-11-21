@@ -8,6 +8,17 @@ import { getSupabase, supabaseConfigured } from "@/lib/supabase/client";
 
 type Step = "phone" | "code";
 
+/** Where to go after login: only a path on this site (blocks tricks like "//x.com" or "/\x.com"). */
+function safeNext(next: string | null): string {
+  if (!next || !next.startsWith("/") || next.includes("\\")) return "/account";
+  try {
+    const url = new URL(next, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/account";
+  } catch {
+    return "/account";
+  }
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
@@ -52,7 +63,7 @@ export function LoginForm() {
     const result = await verifyPhoneOtp(supabase, phone, code);
     setBusy(false);
     if (!result.ok) return setError(result.message);
-    router.replace("/account");
+    router.replace(safeNext(new URLSearchParams(window.location.search).get("next")));
   }
 
   if (step === "phone") {

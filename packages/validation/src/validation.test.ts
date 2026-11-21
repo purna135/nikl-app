@@ -1,5 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { eventDraftSchema, otpSchema, phoneSchema, profileSetupSchema, usernameSchema } from './index';
+import {
+  clubFormSchema,
+  eventDraftSchema,
+  eventFormSchema,
+  otpSchema,
+  phoneSchema,
+  profileSetupSchema,
+  usernameSchema,
+} from './index';
+
+describe('clubFormSchema', () => {
+  it('accepts a club and lowercases the handle', () => {
+    const r = clubFormSchema.parse({ name: 'Patia Pacers', handle: 'Patia.Pacers', category: 'fitness', area: 'Patia' });
+    expect(r.handle).toBe('patia.pacers');
+  });
+  it('rejects handles with spaces and unknown categories', () => {
+    expect(clubFormSchema.safeParse({ name: 'X Club', handle: 'x club', category: 'fitness' }).success).toBe(false);
+    expect(clubFormSchema.safeParse({ name: 'X Club', handle: 'x.club', category: 'karaoke' }).success).toBe(false);
+  });
+});
+
+describe('eventFormSchema', () => {
+  const base = {
+    clubId: '3f1c2a52-5d0e-4c9b-8f1e-2b7a9d6c4e10',
+    title: 'Sunday Long Run',
+    category: 'fitness',
+    startsAt: '2026-11-29T05:45:00+05:30',
+    venueName: 'Infocity Square',
+  };
+  it('defaults to a single free, unpublished date', () => {
+    const r = eventFormSchema.parse(base);
+    expect(r).toMatchObject({ repeatWeeks: 1, tiers: [], publish: false });
+  });
+  it('checks the end is after the start', () => {
+    const r = eventFormSchema.safeParse({ ...base, endsAt: '2026-11-29T05:00:00+05:30' });
+    expect(r.success).toBe(false);
+  });
+  it('requires paid tiers to cost at least ₹1 and allows up to 6', () => {
+    expect(eventFormSchema.safeParse({ ...base, tiers: [{ name: 'Regular', pricePaise: 50 }] }).success).toBe(false);
+    const seven = Array.from({ length: 7 }, (_, i) => ({ name: `T${i}`, pricePaise: 10000 }));
+    expect(eventFormSchema.safeParse({ ...base, tiers: seven }).success).toBe(false);
+  });
+});
 
 describe('phoneSchema', () => {
   it('normalizes valid numbers', () => {

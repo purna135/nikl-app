@@ -9,6 +9,11 @@ export function SiteHeader({ action = "login" }: { action?: "login" | "none" }) 
         </Link>
         <span className="grow" />
         {action === "login" && (
+          <Link href="/organizer" className="nav-link">
+            For organizers
+          </Link>
+        )}
+        {action === "login" && (
           <Link href="/login" className="btn dark">
             Log in
           </Link>

@@ -425,6 +425,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"poster_ai_usage": {
+                  Row: {
+                    "calls": number,"day": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "calls"?: number,"day": string,"user_id": string
+                  }
+                  Update: {
+                    "calls"?: number,"day"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "poster_ai_usage_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"posts": {
                   Row: {
                     "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"caption": string | null,"club_id": string | null,"created_at": string,"created_by": string | null,"event_id": string | null,"id": string,"kind": Database["public"]['Enums']["post_kind"],"moderation_status": Database["public"]['Enums']["moderation_status"],"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
@@ -745,7 +765,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "can_edit_post":
+            "bump_poster_ai_usage":
+{ Args: { "p_limit": number,"p_user_id": string }; Returns: boolean
+                           },
+"can_edit_post":
 { Args: { "p": string }; Returns: boolean
                            },
 "can_manage_event":
@@ -759,6 +782,9 @@ isOneToOne: false
                            },
 "club_is_live":
 { Args: { "club": string }; Returns: boolean
+                           },
+"complete_profile":
+{ Args: { "p_area": string,"p_dob_year": number,"p_interests": (string)[],"p_name": string,"p_username": string }; Returns: undefined
                            },
 "create_club":
 { Args: { "p_area"?: string,"p_bio"?: string,"p_category": string,"p_handle": string,"p_kind"?: string,"p_name": string }; Returns: string

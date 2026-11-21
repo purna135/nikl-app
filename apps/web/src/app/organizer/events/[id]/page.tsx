@@ -1,0 +1,175 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { formatEventWhen, formatPaise } from "@nikl/utils";
+import { requireUser } from "@/lib/auth";
+import { DashSkeleton, OrganizerHeader, Pill, eventStatusLabel } from "@/components/organizer-ui";
+import { deleteDraftAction, setEventStatusAction, setOccurrenceStatusAction } from "../../actions";
+import { EditEventForm } from "./edit-event-form";
+
+export const metadata: Metadata = { title: "Manage event" };
+
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string; error?: string }> };
+
+export default function ManageEventPage({ params, searchParams }: Props) {
+  return (
+    <>
+      <OrganizerHeader />
+      <main className="wrap dash narrow-page">
+        <Link href="/organizer" className="back-link">
+          ← Dashboard
+        </Link>
+        <Suspense fallback={<DashSkeleton />}>
+          <ManageEvent params={params} searchParams={searchParams} />
+        </Suspense>
+      </main>
+    </>
+  );
+}
+
+const isPast = (iso: string) => new Date(iso).getTime() < Date.now();
+
+async function ManageEvent({ params, searchParams }: Props) {
+  const [{ id }, { created, error }] = await Promise.all([params, searchParams]);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  const { supabase, user } = await requireUser(`/organizer/events/${id}`);
+
+  const { data: event } = await supabase
+    .from("events")
+    .select(
+      "id, title, slug, status, category, description, poster_url, recurrence_rule, club_id, clubs(name, review_status), venues(name, area, address), event_occurrences(id, starts_at, ends_at, status, capacity, seats_taken, ticket_tiers(id, name, price_paise, quantity, sold, position))",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!event) notFound();
+
+  const clubLive = event.clubs?.review_status === "approved";
+  const status = eventStatusLabel(event.status, clubLive);
+  const dates = [...event.event_occurrences].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+
+  const statusButton = (value: "published" | "draft" | "cancelled", label: string, kind = "btn") => (
+    <form action={setEventStatusAction}>
+      <input type="hidden" name="eventId" value={event.id} />
+      <input type="hidden" name="status" value={value} />
+      <button className={kind} type="submit">
+        {label}
+      </button>
+    </form>
+  );
+
+  return (
+    <div className="stack">
+      {error && (
+        <p className="notice notice-bad" role="alert">
+          {error.slice(0, 200)}
+        </p>
+      )}
+      {created && (
+        <p className="notice notice-good" role="status">
+          {event.status === "published"
+            ? clubLive
+              ? "Your event is live."
+              : "Event published. It goes live as soon as your club page is approved."
+            : "Draft saved. Publish it when you're ready."}
+        </p>
+      )}
+
+      <section className="panel">
+        <div className="club-title">
+          <div>
+            <h1>{event.title}</h1>
+            <p className="muted">
+              {event.clubs?.name}
+              {event.venues?.name ? ` · ${event.venues.name}` : ""}
+              {event.venues?.area ? `, ${event.venues.area}` : ""}
+            </p>
+          </div>
+          <Pill tone={status.tone}>{status.label}</Pill>
+        </div>
+        <div className="actions-row">
+          {event.status === "draft" && statusButton("published", "Publish", "btn primary")}
+          {event.status === "published" && statusButton("draft", "Move back to draft")}
+          {event.status !== "cancelled" && event.status !== "draft" && statusButton("cancelled", "Cancel event", "btn danger")}
+          {event.status === "cancelled" && statusButton("published", "Restore event")}
+          {event.status === "draft" && (
+            <form action={deleteDraftAction}>
+              <input type="hidden" name="eventId" value={event.id} />
+              <button className="btn danger" type="submit">
+                Delete draft
+              </button>
+            </form>
+          )}
+        </div>
+        <p className="hint">
+          Public page: <span className="mono">nikl.app/e/{event.slug}</span> (public event pages arrive in week 3). Cancelling notifies
+          and refunds ticket holders once bookings are live.
+        </p>
+      </section>
+
+      <section className="panel">
+        <h2>Details</h2>
+        <EditEventForm
+          userId={user.id}
+          event={{
+            id: event.id,
+            title: event.title,
+            category: event.category,
+            description: event.description ?? "",
+            posterUrl: event.poster_url,
+          }}
+        />
+      </section>
+
+      <section className="panel">
+        <h2>
+          Dates <span className="muted small">({dates.length})</span>
+        </h2>
+        <ul className="date-list">
+          {dates.map((o) => {
+            const past = isPast(o.starts_at);
+            const tiers = [...o.ticket_tiers].sort((a, b) => a.position - b.position);
+            return (
+              <li key={o.id} className={o.status === "cancelled" ? "is-cancelled" : ""}>
+                <div className="date-main">
+                  <strong>{formatEventWhen(o.starts_at)}</strong>
+                  <span className="muted small">
+                    {o.seats_taken} going{o.capacity ? ` of ${o.capacity}` : ""} ·{" "}
+                    {tiers.map((t) => `${t.name} ${formatPaise(t.price_paise)}${t.quantity ? ` (${t.sold}/${t.quantity})` : ""}`).join(" · ")}
+                  </span>
+                </div>
+                {o.status === "cancelled" ? (
+                  <span className="date-side">
+                    <Pill tone="bad">Cancelled</Pill>
+                    {!past && (
+                      <form action={setOccurrenceStatusAction}>
+                        <input type="hidden" name="occurrenceId" value={o.id} />
+                        <input type="hidden" name="eventId" value={event.id} />
+                        <input type="hidden" name="status" value="scheduled" />
+                        <button className="link" type="submit">
+                          Restore
+                        </button>
+                      </form>
+                    )}
+                  </span>
+                ) : past ? (
+                  <Pill tone="muted">Past</Pill>
+                ) : (
+                  <form action={setOccurrenceStatusAction}>
+                    <input type="hidden" name="occurrenceId" value={o.id} />
+                        <input type="hidden" name="eventId" value={event.id} />
+                    <input type="hidden" name="status" value="cancelled" />
+                    <button className="link danger-link" type="submit">
+                      Cancel this date
+                    </button>
+                  </form>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <p className="hint">Changing times and ticket prices for existing dates comes with bookings (week 6).</p>
+      </section>
+    </div>
+  );
+}

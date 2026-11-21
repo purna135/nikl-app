@@ -71,6 +71,9 @@ export function AccountView() {
         <dt>User ID</dt>
         <dd>{view.id}</dd>
       </dl>
+      <Link className="btn dark block" href="/organizer">
+        Organizer dashboard
+      </Link>
       <button className="btn block" onClick={signOut}>
         Log out
       </button>

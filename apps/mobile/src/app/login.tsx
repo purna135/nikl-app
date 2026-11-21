@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput,
 import { sendPhoneOtp, verifyPhoneOtp } from '@nikl/supabase';
 import { formatIndianPhone } from '@nikl/utils';
 import { Button, Screen, T } from '@/components/ui';
+import { fetchMyProfile, isProfileComplete } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import { radius, space, touchTarget, useNiklTheme } from '@/theme';
 
@@ -34,9 +35,16 @@ export default function LoginScreen() {
     setBusy(true);
     setError(null);
     const result = await verifyPhoneOtp(supabase, phone, code);
+    if (!result.ok) {
+      setBusy(false);
+      return setError(result.message);
+    }
+    // First login: ask for name, username, interests and birth year before anything else.
+    const { data } = await supabase.auth.getUser();
+    const profile = data.user ? await fetchMyProfile(data.user.id) : null;
     setBusy(false);
-    if (!result.ok) return setError(result.message);
-    router.back();
+    if (!isProfileComplete(profile)) router.replace('/profile-setup');
+    else router.back();
   }
 
   const inputStyle = [styles.input, { borderColor: t.line, color: t.ink, backgroundColor: t.surface }];

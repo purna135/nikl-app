@@ -19,15 +19,24 @@ Secrets go in your **password manager** and the service's own settings page (Sup
 
 ---
 
-## What Claude needs to start week 2
+## Try the organizer dashboard yourself (week 2 is done)
 
-Week 2 builds clubs, venues and events, the organizer web dashboard (create and edit events, weekly repeats), event pages, server-side login on the web, profile set-up, and **create event from poster**.
+1. Make sure **Docker Desktop** is running.
+2. In PowerShell in the project folder, run `pnpm dev:web`, then open http://localhost:3000/organizer.
+3. Log in with `98765 43210`, code `123456`. On your local copy, this test account is also a **Nikl admin**, so you can approve your own test club at http://localhost:3000/admin/clubs.
+4. Try: create a club page → add an event (weekly repeat, free or paid) → approve the club → the event goes public.
+
+"Fill in details from poster" returns sample details until your Anthropic key is stored (1.6).
+
+## What Claude needs for week 3 (map, Explore, public event pages)
 
 | # | What | Blocking? |
 |---|---|---|
-| 1 | **Decide who can create a club page during the beta** (see the open question in [DECISIONS.md](DECISIONS.md#open-questions)). | Yes, it shapes the organizer sign-up flow. |
-| 2 | ~~Say where the GitHub repo should live~~ ✅ done: `purna135/nikl-app`. | – |
-| 3 | **Store the Anthropic key yourself** (1.6) so poster reading runs for real. Until then Claude builds it against a stand-in. | No. |
+| 1 | **Mapbox public token** (1.5) for the map. | Yes for the map; Claude can build everything else first. |
+| 2 | **Anthropic key** (1.6), stored by you, so poster reading runs for real. | No. |
+| 3 | Decide the **domain** (2.5), since public event links will look like `nikl.app/e/...`. | No, the links can change later. |
+
+*Making yourself an admin on the hosted project comes later: phone login there waits for MSG91 (2.3). Then run this once in Supabase → SQL Editor, with your number: `insert into public.platform_admins (user_id) select id from auth.users where phone = '91XXXXXXXXXX';`*
 
 ---
 
