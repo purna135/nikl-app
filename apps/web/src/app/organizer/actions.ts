@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { clubFormSchema, eventFormSchema } from "@nikl/validation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { dbErrorMessage, fieldErrorsFrom, type ActionResult } from "@/lib/errors";
@@ -14,6 +14,16 @@ const int = (fd: FormData, key: string) => {
   const v = text(fd, key);
   return v === undefined ? undefined : Number(v);
 };
+const num = (fd: FormData, key: string) => {
+  const v = text(fd, key);
+  const n = v === undefined ? undefined : Number.parseFloat(v);
+  return n === undefined || Number.isNaN(n) ? undefined : n;
+};
+
+/** Public pages (home, Explore, event and club pages) are cached; this shows organizer changes right away. */
+function refreshPublic() {
+  updateTag("events");
+}
 
 /** Poster URLs must be uploads in our own "posters" bucket, never an arbitrary site. */
 const POSTER_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/posters/`;
@@ -81,6 +91,8 @@ export async function createEventAction(_prev: ActionResult | null, fd: FormData
     venueName: text(fd, "venueName"),
     venueAddress: text(fd, "venueAddress"),
     venueArea: text(fd, "venueArea"),
+    venueLat: num(fd, "venueLat"),
+    venueLng: num(fd, "venueLng"),
     capacity: int(fd, "capacity"),
     repeatWeeks: int(fd, "repeatWeeks") ?? 1,
     tiers,
@@ -105,12 +117,15 @@ export async function createEventAction(_prev: ActionResult | null, fd: FormData
     p_venue_name: e.venueName,
     p_venue_address: e.venueAddress,
     p_venue_area: e.venueArea,
+    p_venue_lat: e.venueLat,
+    p_venue_lng: e.venueLng,
     p_capacity: e.capacity,
     p_repeat_weeks: e.repeatWeeks,
     p_tiers: e.tiers.map((t) => ({ name: t.name, price_paise: t.pricePaise, quantity: t.quantity ?? null })),
     p_publish: e.publish,
   });
   if (error || !eventId) return { ok: false, message: dbErrorMessage(error) };
+  refreshPublic();
   redirect(`/organizer/events/${eventId}?created=1`);
 }
 
@@ -135,8 +150,25 @@ export async function updateEventAction(_prev: ActionResult | null, fd: FormData
     .select("id");
   if (error) return { ok: false, message: dbErrorMessage(error) };
   if (!data?.length) return { ok: false, message: "You can't edit this event." };
+  refreshPublic();
   refresh();
   return { ok: true, message: "Saved." };
+}
+
+/** Add, move or remove an event's map pin (the database gives the event its own venue copy). */
+export async function setEventPinAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const id = text(fd, "eventId");
+  if (!id) return { ok: false, message: "Missing event." };
+  const lat = num(fd, "venueLat") ?? null;
+  const lng = num(fd, "venueLng") ?? null;
+  if ((lat === null) !== (lng === null)) return { ok: false, message: "Drop the map pin again." };
+  const { supabase, user } = await signedIn();
+  if (!user) return { ok: false, message: "Your session expired. Log in again." };
+  const { error } = await supabase.rpc("set_event_pin", { p_event_id: id, p_lat: lat ?? undefined, p_lng: lng ?? undefined });
+  if (error) return { ok: false, message: dbErrorMessage(error) };
+  refreshPublic();
+  refresh();
+  return { ok: true, message: lat === null ? "Pin removed." : "Pin saved. It shows on the map now." };
 }
 
 /** Publish, move back to draft, cancel, or restore an event. */
@@ -162,6 +194,7 @@ export async function setEventStatusAction(fd: FormData): Promise<void> {
     // Restoring a cancelled event brings back its future dates too.
     await supabase.from("event_occurrences").update({ status: "scheduled" }).eq("event_id", id).eq("status", "cancelled").gt("starts_at", now);
   }
+  refreshPublic();
   refresh();
 }
 
@@ -175,6 +208,7 @@ export async function setOccurrenceStatusAction(fd: FormData): Promise<void> {
   if (!user) redirect(`/login?next=/organizer/events/${eventId}`);
   const { data, error } = await supabase.from("event_occurrences").update({ status }).eq("id", id).select("id");
   if (error || !data?.length) backWithError(eventId, error ? dbErrorMessage(error) : "You can't change this date.");
+  refreshPublic();
   refresh();
 }
 

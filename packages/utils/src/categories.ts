@@ -35,3 +35,16 @@ export const BBSR_AREAS = [
   'Kharavel Nagar',
 ] as const;
 export type Area = (typeof BBSR_AREAS)[number];
+
+/** Map centre for Bhubaneswar, and rough centres of each area (for default map pins). */
+export const BBSR_CENTER = { lat: 20.2961, lng: 85.8245 } as const;
+export const AREA_CENTERS: Record<Area, { lat: number; lng: number }> = {
+  Patia: { lat: 20.354, lng: 85.819 },
+  Chandrasekharpur: { lat: 20.3226, lng: 85.8186 },
+  'Saheed Nagar': { lat: 20.29, lng: 85.845 },
+  'Jaydev Vihar': { lat: 20.2985, lng: 85.8186 },
+  Nayapalli: { lat: 20.296, lng: 85.809 },
+  'Old Town': { lat: 20.242, lng: 85.834 },
+  Khandagiri: { lat: 20.258, lng: 85.78 },
+  'Kharavel Nagar': { lat: 20.27, lng: 85.843 },
+};

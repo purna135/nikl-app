@@ -721,14 +721,14 @@ isOneToOne: false
                   ]
                 },"venues": {
                   Row: {
-                    "address": string | null,"area": string | null,"created_at": string,"google_place_id": string | null,"id": string,"location": unknown,"name": string,"updated_at": string
+                    "address": string | null,"area": string | null,"created_at": string,"google_place_id": string | null,"id": string,"lat": number | null,"lng": number | null,"location": unknown,"name": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address"?: string | null,"area"?: string | null,"created_at"?: string,"google_place_id"?: string | null,"id"?: string,"location"?: unknown,"name": string,"updated_at"?: string
+                    "address"?: string | null,"area"?: string | null,"created_at"?: string,"google_place_id"?: string | null,"id"?: string,"lat"?: never,"lng"?: never,"location"?: unknown,"name": string,"updated_at"?: string
                   }
                   Update: {
-                    "address"?: string | null,"area"?: string | null,"created_at"?: string,"google_place_id"?: string | null,"id"?: string,"location"?: unknown,"name"?: string,"updated_at"?: string
+                    "address"?: string | null,"area"?: string | null,"created_at"?: string,"google_place_id"?: string | null,"id"?: string,"lat"?: never,"lng"?: never,"location"?: unknown,"name"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -790,10 +790,15 @@ isOneToOne: false
 { Args: { "p_area"?: string,"p_bio"?: string,"p_category": string,"p_handle": string,"p_kind"?: string,"p_name": string }; Returns: string
                            },
 "create_event":
-{ Args: { "p_capacity"?: number,"p_category": string,"p_club_id": string,"p_description"?: string,"p_ends_at"?: string,"p_poster_url"?: string,"p_publish"?: boolean,"p_repeat_weeks"?: number,"p_starts_at": string,"p_tags"?: (string)[],"p_tiers"?: Json,"p_title": string,"p_venue_address"?: string,"p_venue_area"?: string,"p_venue_id"?: string,"p_venue_name"?: string }; Returns: string
+{ Args: { "p_capacity"?: number,"p_category": string,"p_club_id": string,"p_description"?: string,"p_ends_at"?: string,"p_poster_url"?: string,"p_publish"?: boolean,"p_repeat_weeks"?: number,"p_starts_at": string,"p_tags"?: (string)[],"p_tiers"?: Json,"p_title": string,"p_venue_address"?: string,"p_venue_area"?: string,"p_venue_id"?: string,"p_venue_lat"?: number,"p_venue_lng"?: number,"p_venue_name"?: string }; Returns: string
                            },
 "event_visible":
 { Args: { "ev": string }; Returns: boolean
+                           },
+"explore_events":
+{ Args: { "p_from"?: string,"p_to"?: string }; Returns: {
+              "area": string,"category": string,"club_handle": string,"club_name": string,"club_verified": boolean,"ends_at": string,"event_id": string,"going": number,"is_free": boolean,"lat": number,"lng": number,"min_price_paise": number,"more_dates": number,"occurrence_id": string,"poster_url": string,"slug": string,"spots_left": number,"starts_at": string,"tags": (string)[],"title": string,"venue_name": string
+            }[]
                            },
 "is_club_admin":
 { Args: { "club": string }; Returns: boolean
@@ -842,7 +847,10 @@ isOneToOne: false
         to: "clubs"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"set_event_pin":
+{ Args: { "p_event_id": string,"p_lat"?: number,"p_lng"?: number }; Returns: undefined
+                           }
           }
           Enums: {
             "author_type": "club"|"user","booking_status": "held"|"payment_pending"|"failed"|"paid"|"confirmed"|"expired"|"late_paid"|"cancel_requested"|"refunded"|"checked_in","club_member_status": "invited"|"active"|"removed","club_review_status": "pending"|"approved"|"rejected"|"suspended","club_role": "owner"|"admin"|"checkin","event_status": "draft"|"published"|"cancelled"|"ended","follow_target": "club"|"user","kyc_status": "not_started"|"pending"|"verified"|"rejected","moderation_status": "pending"|"approved"|"rejected"|"flagged","occurrence_status": "scheduled"|"cancelled"|"ended","payment_status": "created"|"authorized"|"captured"|"failed"|"refunded"|"partially_refunded","payout_status": "pending"|"on_hold"|"processed"|"reversed"|"failed","post_kind": "photo"|"event"|"going","refund_status": "pending"|"processed"|"failed","report_status": "open"|"reviewing"|"actioned"|"dismissed","report_target": "post"|"story"|"user"|"club"|"event","story_kind": "event_auto"|"custom"|"your_plan","ticket_status": "valid"|"used"|"void","visibility": "public"|"friends"|"unlisted"|"private"

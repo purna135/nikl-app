@@ -1,15 +1,29 @@
-import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, type TextProps } from 'react-native';
+import type { ReactElement, ReactNode } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, type RefreshControlProps, type TextProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fontSize, radius, space, touchTarget, useNiklTheme } from '@/theme';
 
-/** Screen wrapper: safe area, theme background, scrollable content. */
-export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+/** Screen wrapper: safe area, theme background, scrollable content (optionally pull-to-refresh). */
+export function Screen({
+  children,
+  scroll = true,
+  refreshControl,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  refreshControl?: ReactElement<RefreshControlProps>;
+}) {
   const t = useNiklTheme();
   const content = <View style={styles.content}>{children}</View>;
   return (
     <SafeAreaView edges={['top']} style={[styles.screen, { backgroundColor: t.app }]}>
-      {scroll ? <ScrollView contentContainerStyle={styles.scroll}>{content}</ScrollView> : content}
+      {scroll ? (
+        <ScrollView contentContainerStyle={styles.scroll} refreshControl={refreshControl}>
+          {content}
+        </ScrollView>
+      ) : (
+        content
+      )}
     </SafeAreaView>
   );
 }
@@ -68,8 +82,18 @@ export function Button({
   );
 }
 
-/** Dashed placeholder used for features that arrive in later weeks. */
-export function EmptyState({ emoji, title, body }: { emoji: string; title: string; body: string }) {
+/** Dashed placeholder for empty lists and features that arrive in later weeks, with an optional action. */
+export function EmptyState({
+  emoji,
+  title,
+  body,
+  action,
+}: {
+  emoji: string;
+  title: string;
+  body: string;
+  action?: { label: string; onPress: () => void };
+}) {
   const t = useNiklTheme();
   return (
     <View style={[styles.empty, { borderColor: t.line }]}>
@@ -80,6 +104,11 @@ export function EmptyState({ emoji, title, body }: { emoji: string; title: strin
       <T variant="muted" style={{ textAlign: 'center' }}>
         {body}
       </T>
+      {action && (
+        <View style={styles.emptyAction}>
+          <Button label={action.label} onPress={action.onPress} kind="secondary" />
+        </View>
+      )}
     </View>
   );
 }
@@ -94,4 +123,5 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: fontSize.lg, fontWeight: '600' },
   empty: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.lg, padding: space.xl, gap: space.sm, alignItems: 'center' },
   emoji: { fontSize: 34 },
+  emptyAction: { alignSelf: 'stretch', marginTop: space.sm },
 });

@@ -303,7 +303,21 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 | Mobile profile set-up after first login (name, username, area, 3+ interests, birth year for 18+) | ✅ Built, typechecks. Not yet tried on a phone. |
 | Database tests (pgTAP): 27 tests for club approval, event creation and profile rules, run in CI | ✅ |
 | Independent code review (T22): 9 findings (5 important: poster function auth, open redirect, poster URLs, restore event, duplicate interests), **all fixed** | ✅ |
-| Public event and club pages, map | ⏳ Week 3 |
+| Public event and club pages, map | ✅ Week 3 (below) |
+
+### Week 3 status (21 Nov 2026): browse real data
+
+| Item | Status |
+|---|---|
+| Database: venue pins (`venues.lat/lng`), `create_event` takes a pin, `explore_events()` (next date of every public event in 60 days, with price, spots left, club), `set_event_pin()` to add or move a pin later | ✅ Migration `20261121050000`; 12 new database tests (39 in total) |
+| Web **Explore** (`/explore`): Mapbox map by default (category pins, tap → card), Map/Grid switch, filters (Any time, Happening now, Today, Tonight, This weekend, Next 7 days, Free, categories), search, empty state | ✅ Tested in the browser: filters, search, pins, phone width |
+| Web **event page** (`/e/[slug]`): poster, club, dates and prices, venue with map image and directions, share + WhatsApp, "Booking opens soon"; WhatsApp/Google previews (title, date, venue, poster) | ✅ Popular pages prebuilt; others built on first visit and cached |
+| Web **club page** (`/c/[handle]`) and **home** "This weekend" picks (falls back to "Coming up") | ✅ |
+| Organizer: tap-the-map venue pin when creating an event, and a "Map pin" panel on the manage page | ✅ Tested end to end: the pin shows on Explore straight after saving |
+| Public pages stay fast (cached) and update the moment an organizer or admin changes something (T24) | ✅ Tested: publish → appears, cancel → disappears |
+| Mobile: Explore list (search, same filters, pull to refresh), event screen (Open in Maps, share), home "This weekend" | ✅ Typecheck, lint and Android bundle pass. **Not yet tried on a phone.** Map waits for the library decision (T25). |
+| AI poster reading | ⏸ On hold (T23); button hidden |
+| Independent code review (T22): 9 findings (3 important: Explore filter stuck after navigating, ended paid events shown as "Free", list hover moving the map), 8 fixed; the repeating-events filter limit is logged as an open question | ✅ |
 
 Decisions made during setup:
 - Phone numbers and year of birth sit in an owner-only `profiles_private` table, and Razorpay details in an admin-only `club_payout_settings` table. `profiles` itself is public.

@@ -93,4 +93,4 @@ CI (GitHub Actions) runs typecheck, lint, tests and the web build on every pull 
 
 ## Status
 
-Weeks 1–2 done: login, organizer dashboard, club approval, events with weekly repeats and tickets, poster-to-event, profile set-up. Next (week 3): Explore with the map as default, search and filters, public event pages. Details in DEV_PLAN.md §7.
+Weeks 1–3 done: login, organizer dashboard, club approval, events with weekly repeats and tickets, profile set-up, and Explore (Mapbox map by default, filters, search), public event and club pages, venue pins. AI poster reading is built but on hold. Next (week 4): feed, follow, like, save. Details in DEV_PLAN.md §7.

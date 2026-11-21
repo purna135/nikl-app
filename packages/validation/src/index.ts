@@ -84,6 +84,9 @@ export const eventFormSchema = z
     venueName: z.string().trim().min(2, 'Add where it happens.').max(120),
     venueAddress: z.string().trim().max(200).optional(),
     venueArea: z.enum(BBSR_AREAS).optional(),
+    /** Map pin. Both or neither; must be inside India (same check as the database). */
+    venueLat: z.number().min(6, 'The map pin has to be in India.').max(37, 'The map pin has to be in India.').optional(),
+    venueLng: z.number().min(68, 'The map pin has to be in India.').max(98, 'The map pin has to be in India.').optional(),
     capacity: z.number().int().positive().max(100_000).optional(),
     repeatWeeks: z.number().int().min(1).max(12).default(1),
     tiers: z.array(ticketTierSchema).max(6, 'Add up to 6 ticket types.').default([]),
@@ -92,6 +95,10 @@ export const eventFormSchema = z
   .refine((v) => !v.endsAt || new Date(v.endsAt) > new Date(v.startsAt), {
     message: 'The end time has to be after the start time.',
     path: ['endsAt'],
+  })
+  .refine((v) => (v.venueLat === undefined) === (v.venueLng === undefined), {
+    message: 'Drop the map pin again.',
+    path: ['venueLat'],
   });
 export type EventForm = z.infer<typeof eventFormSchema>;
 

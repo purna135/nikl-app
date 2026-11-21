@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { DashSkeleton, OrganizerHeader, Pill, eventStatusLabel } from "@/components/organizer-ui";
 import { deleteDraftAction, setEventStatusAction, setOccurrenceStatusAction } from "../../actions";
 import { EditEventForm } from "./edit-event-form";
+import { EventPinForm } from "./event-pin-form";
 
 export const metadata: Metadata = { title: "Manage event" };
 
@@ -38,7 +39,7 @@ async function ManageEvent({ params, searchParams }: Props) {
   const { data: event } = await supabase
     .from("events")
     .select(
-      "id, title, slug, status, category, description, poster_url, recurrence_rule, club_id, clubs(name, review_status), venues(name, area, address), event_occurrences(id, starts_at, ends_at, status, capacity, seats_taken, ticket_tiers(id, name, price_paise, quantity, sold, position))",
+      "id, title, slug, status, category, description, poster_url, recurrence_rule, club_id, clubs(name, review_status), venues(name, area, address, lat, lng), event_occurrences(id, starts_at, ends_at, status, capacity, seats_taken, ticket_tiers(id, name, price_paise, quantity, sold, position))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -102,8 +103,20 @@ async function ManageEvent({ params, searchParams }: Props) {
           )}
         </div>
         <p className="hint">
-          Public page: <span className="mono">nikl.app/e/{event.slug}</span> (public event pages arrive in week 3). Cancelling notifies
-          and refunds ticket holders once bookings are live.
+          {event.status === "draft" || !clubLive ? (
+            <>
+              Public page once it&apos;s live: <span className="mono">/e/{event.slug}</span>.
+            </>
+          ) : (
+            <>
+              Public page:{" "}
+              <Link href={`/e/${event.slug}`} className="link">
+                /e/{event.slug}
+              </Link>
+              .
+            </>
+          )}{" "}
+          Cancelling notifies and refunds ticket holders once bookings are live.
         </p>
       </section>
 
@@ -120,6 +133,20 @@ async function ManageEvent({ params, searchParams }: Props) {
           }}
         />
       </section>
+
+      {event.venues?.name && (
+        <section className="panel">
+          <h2>Map pin</h2>
+          <p className="hint" style={{ margin: 0 }}>
+            Events with a pin show on the Explore map. Tap where {event.venues.name} is; drag to adjust.
+          </p>
+          <EventPinForm
+            eventId={event.id}
+            area={event.venues.area ?? ""}
+            initial={event.venues.lat != null && event.venues.lng != null ? { lat: event.venues.lat, lng: event.venues.lng } : null}
+          />
+        </section>
+      )}
 
       <section className="panel">
         <h2>

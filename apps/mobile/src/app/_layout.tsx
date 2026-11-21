@@ -21,6 +21,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="login" options={{ presentation: 'modal' }} />
           <Stack.Screen name="profile-setup" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="event/[slug]" />
         </Stack>
       </ThemeProvider>
     </AuthProvider>

@@ -20,6 +20,16 @@ export function formatPaise(paise: number, { zeroAsFree = true } = {}): string {
   );
 }
 
+/**
+ * Price summary for an event: "Free", "From ₹299", or "Free + paid" when a free tier sits beside paid ones.
+ * `minPaise` is the cheapest tier (null when there are no tiers).
+ */
+export function priceSummary(isFree: boolean, minPaise: number | null | undefined): string {
+  if (isFree || minPaise == null) return 'Free';
+  if (minPaise === 0) return 'Free + paid';
+  return `From ${formatPaise(minPaise)}`;
+}
+
 /** Booking fee for a subtotal, rounded to the nearest whole rupee (in paise). */
 export function bookingFeePaise(subtotalPaise: number, feeBps: number = BOOKING_FEE_BPS): number {
   if (!Number.isInteger(subtotalPaise) || subtotalPaise < 0) throw new RangeError(`Invalid subtotal: ${subtotalPaise}`);

@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { BBSR_AREAS, CATEGORIES } from "@nikl/utils";
 import { Field, describedBy } from "@/components/form-field";
 import { PosterPicker, type PosterValue } from "@/components/poster-picker";
+import { PinPicker, type Pin } from "@/components/pin-picker";
 import { getSupabase } from "@/lib/supabase/client";
 import type { ActionResult } from "@/lib/errors";
 import { createEventAction } from "../../actions";
@@ -23,6 +24,9 @@ type PosterFields = {
   pricePaise?: number;
   description?: string;
 };
+
+// Poster reading is on hold (DECISIONS.md T23). Flip this env flag to bring the button back.
+const POSTER_AI_ENABLED = process.env.NEXT_PUBLIC_POSTER_AI_ENABLED === "true";
 
 const todayIST = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 const addDay = (d: string) => {
@@ -45,6 +49,7 @@ export function EventForm({ clubs, defaultClubId, userId }: { clubs: Club[]; def
   const [venueName, setVenueName] = useState("");
   const [venueAddress, setVenueAddress] = useState("");
   const [venueArea, setVenueArea] = useState("");
+  const [pin, setPin] = useState<Pin>(null);
   const [description, setDescription] = useState("");
   const [paid, setPaid] = useState(false);
   const [tiers, setTiers] = useState<Tier[]>([{ name: "Regular", price: "", quantity: "" }]);
@@ -151,6 +156,8 @@ export function EventForm({ clubs, defaultClubId, userId }: { clubs: Club[]; def
       <input type="hidden" name="endsAt" value={endsAt} />
       <input type="hidden" name="tiers" value={tiersJson} />
       <input type="hidden" name="repeatWeeks" value={repeat ? repeatWeeks : "1"} />
+      <input type="hidden" name="venueLat" value={pin?.lat ?? ""} />
+      <input type="hidden" name="venueLng" value={pin?.lng ?? ""} />
 
       {clubs.length > 1 && (
         <Field id="club" label="Club">
@@ -174,7 +181,7 @@ export function EventForm({ clubs, defaultClubId, userId }: { clubs: Club[]; def
             setAiNote(null);
           }}
         />
-        {poster && (
+        {POSTER_AI_ENABLED && poster && (
           <div className="ai-row">
             <button type="button" className="btn dark" onClick={readPoster} disabled={reading}>
               {reading ? "Reading your poster…" : "✨ Fill in details from poster"}
@@ -307,7 +314,9 @@ export function EventForm({ clubs, defaultClubId, userId }: { clubs: Club[]; def
             </select>
           </Field>
         </div>
-        <p className="hint">Map pins and venue search arrive with the map in week 3.</p>
+        <PinPicker value={pin} onChange={setPin} area={venueArea} />
+        {errors.venueLat && <p className="error">{errors.venueLat}</p>}
+        {errors.venueLng && <p className="error">{errors.venueLng}</p>}
       </section>
 
       <section className={`form-section${filled("tickets")}`}>

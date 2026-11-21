@@ -8,8 +8,11 @@ export function SiteHeader({ action = "login" }: { action?: "login" | "none" }) 
           Nikl
         </Link>
         <span className="grow" />
+        <Link href="/explore" className="nav-link">
+          Explore
+        </Link>
         {action === "login" && (
-          <Link href="/organizer" className="nav-link">
+          <Link href="/organizer" className="nav-link hide-sm">
             For organizers
           </Link>
         )}

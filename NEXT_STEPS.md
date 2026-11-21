@@ -1,6 +1,6 @@
 # Nikl: Next Steps (who does what)
 
-> Status on **21 Nov 2026**: planning done, week 1 of development done (see [DEV_PLAN.md](DEV_PLAN.md) §7).
+> Status on **21 Nov 2026**: planning done, weeks 1–3 of development done: login, organizer dashboard, club approval, and now the **map, Explore and public event/club pages** (see [DEV_PLAN.md](DEV_PLAN.md) §7).
 > Tick the boxes as you go. Prices and timelines are what we know today, so check them when you sign up.
 
 ## The short version
@@ -19,22 +19,25 @@ Secrets go in your **password manager** and the service's own settings page (Sup
 
 ---
 
-## Try the organizer dashboard yourself (week 2 is done)
+## Try it yourself (weeks 2–3 are done)
 
 1. Make sure **Docker Desktop** is running.
-2. In PowerShell in the project folder, run `pnpm dev:web`, then open http://localhost:3000/organizer.
-3. Log in with `98765 43210`, code `123456`. On your local copy, this test account is also a **Nikl admin**, so you can approve your own test club at http://localhost:3000/admin/clubs.
-4. Try: create a club page → add an event (weekly repeat, free or paid) → approve the club → the event goes public.
+2. In PowerShell in the project folder, run `pnpm dev:web`.
+3. Open http://localhost:3000/explore: the map of sample Bhubaneswar events. Try **Tonight**, **This weekend**, **Free**, a category, or search "patia". Tap a pin, then open an event page.
+4. Open http://localhost:3000/organizer and log in with `98765 43210`, code `123456`. On your local copy this test account is also a **Nikl admin**, so you can approve your own test club at http://localhost:3000/admin/clubs.
+5. Try: create a club page → add an event and **tap the map to drop the venue pin** → approve the club → the event appears on the Explore map straight away.
+6. On your phone (1.2), the **Explore** tab shows the same events as a list with search and filters; tap one for the event screen.
 
-"Fill in details from poster" returns sample details until your Anthropic key is stored (1.6).
+The poster button is hidden while AI poster reading is on hold (your call, 21 Nov 2026).
 
-## What Claude needs for week 3 (map, Explore, public event pages)
+## What Claude needs next (week 4: feed, follow, like, save)
 
 | # | What | Blocking? |
 |---|---|---|
-| 1 | **Mapbox public token** (1.5) for the map. | Yes for the map; Claude can build everything else first. |
-| 2 | **Anthropic key** (1.6), stored by you, so poster reading runs for real. | No. |
+| 1 | **Pick the mobile map library** (DECISIONS.md → open questions). Claude recommends `@rnmapbox/maps`, which means installing a test build of Nikl on your phone instead of Expo Go. | No. Week 4 can start; the phone map waits for this. |
+| 2 | **Restrict your Mapbox token** (1.5, last step). | No, but do it before sharing links widely. |
 | 3 | Decide the **domain** (2.5), since public event links will look like `nikl.app/e/...`. | No, the links can change later. |
+| 4 | **Anthropic key** (1.6): on hold, as you asked. | No. |
 
 *Making yourself an admin on the hosted project comes later: phone login there waits for MSG91 (2.3). Then run this once in Supabase → SQL Editor, with your number: `insert into public.platform_admins (user_id) select id from auth.users where phone = '91XXXXXXXXXX';`*
 
@@ -87,12 +90,19 @@ Linking lets Claude copy the tables and sample data to the hosted project, using
 
 *Phone login on the hosted project stays off until MSG91 is ready (2.3). Until then, login is tested on the local database with the test numbers.*
 
-### 1.5 Mapbox token (5 min) — *for the map in week 3*
-- [ ] **account.mapbox.com** → Sign up. It may ask for a card; the free tier covers development.
-- [ ] Open **Tokens** and copy the **Default public token** (starts with `pk.`).
-- [ ] Send it to Claude (public tokens are safe to share).
+### 1.5 Mapbox token (5 min) — ✅ token received 21 Nov 2026; one step left
+- [x] **account.mapbox.com** → Sign up.
+- [x] Copy the **Default public token** (starts with `pk.`) and send it to Claude. It's in the git-ignored env files, not in the repo.
+- [ ] **Restrict it to Nikl's addresses** (2 min), so other websites can't use your free quota:
+  1. account.mapbox.com → **Tokens** → click **Create a token** (keep the default one unrestricted for local testing).
+  2. Name it `nikl-web`. Leave the default public scopes ticked.
+  3. Under **URL restrictions**, add `http://localhost:3000` now, and your real domain (e.g. `https://nikl.app`) once you have it, plus the Vercel address when we set it up.
+  4. Click **Create token** and send Claude the new `pk.` token. Claude swaps it in.
 
-### 1.6 Anthropic API key (10 min) — *for "create event from poster" in week 2*
+*Mapbox's free tier covers 50,000 web map loads a month, plenty for the beta.*
+
+### 1.6 Anthropic API key (10 min) — ⏸ on hold (your call, 21 Nov 2026)
+*Skip this for now. When you want poster reading, do these steps and tell Claude; Claude turns the button back on.*
 - [ ] **console.anthropic.com** → Sign up → **Billing**: add a small amount of credit.
 - [ ] **API Keys** → **Create key** → name it `nikl-dev` → save it in your password manager.
 - [ ] **Don't paste it in chat.** Store it yourself:

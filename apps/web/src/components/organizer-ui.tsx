@@ -14,7 +14,7 @@ export function OrganizerHeader({ section = "Organizer" }: { section?: string })
         <Link href="/organizer" className="nav-link">
           Dashboard
         </Link>
-        <Link href="/account" className="nav-link">
+        <Link href="/account" className="nav-link hide-sm">
           Account
         </Link>
       </div>

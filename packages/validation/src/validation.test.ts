@@ -32,6 +32,11 @@ describe('eventFormSchema', () => {
     const r = eventFormSchema.parse(base);
     expect(r).toMatchObject({ repeatWeeks: 1, tiers: [], publish: false });
   });
+  it('takes a map pin only as a pair, and only inside India', () => {
+    expect(eventFormSchema.safeParse({ ...base, venueLat: 20.35, venueLng: 85.82 }).success).toBe(true);
+    expect(eventFormSchema.safeParse({ ...base, venueLat: 20.35 }).success).toBe(false);
+    expect(eventFormSchema.safeParse({ ...base, venueLat: 51.5, venueLng: -0.12 }).success).toBe(false);
+  });
   it('checks the end is after the start', () => {
     const r = eventFormSchema.safeParse({ ...base, endsAt: '2026-11-29T05:00:00+05:30' });
     expect(r.success).toBe(false);

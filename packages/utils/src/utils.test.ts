@@ -6,7 +6,10 @@ import {
   formatIndianPhone,
   formatPaise,
   normalizeIndianPhone,
+  inTimeWindow,
+  priceSummary,
   slugify,
+  timeWindow,
 } from './index';
 
 describe('money', () => {
@@ -68,5 +71,54 @@ describe('slugify', () => {
   it('makes URL-safe slugs', () => {
     expect(slugify('Full Moon 10K: Night Run!')).toBe('full-moon-10k-night-run');
     expect(slugify('Pottery & Chai')).toBe('pottery-and-chai');
+  });
+});
+
+describe('time windows (IST)', () => {
+  // Saturday 21 Nov 2026, 10:00 IST = 04:30 UTC
+  const satMorning = new Date('2026-11-21T04:30:00Z');
+  // Wednesday 25 Nov 2026, 18:30 IST = 13:00 UTC
+  const wedEvening = new Date('2026-11-25T13:00:00Z');
+
+  it('today ends at midnight IST', () => {
+    expect(timeWindow('today', satMorning).to?.toISOString()).toBe('2026-11-21T18:30:00.000Z');
+  });
+
+  it('tonight starts at 5 PM IST (or now if later)', () => {
+    expect(timeWindow('tonight', satMorning).from.toISOString()).toBe('2026-11-21T11:30:00.000Z');
+    expect(timeWindow('tonight', wedEvening).from.toISOString()).toBe(wedEvening.toISOString());
+  });
+
+  it('this weekend on a Saturday runs from now to Monday 00:00 IST', () => {
+    const w = timeWindow('weekend', satMorning);
+    expect(w.from.toISOString()).toBe(satMorning.toISOString());
+    expect(w.to?.toISOString()).toBe('2026-11-22T18:30:00.000Z');
+  });
+
+  it('this weekend on a Wednesday means the coming Saturday and Sunday', () => {
+    const w = timeWindow('weekend', wedEvening);
+    expect(w.from.toISOString()).toBe('2026-11-27T18:30:00.000Z'); // Sat 28 Nov 00:00 IST
+    expect(w.to?.toISOString()).toBe('2026-11-29T18:30:00.000Z');
+  });
+
+  it('matches events to filters', () => {
+    // Sat 21 Nov 7:30 PM IST
+    expect(inTimeWindow('2026-11-21T14:00:00Z', null, 'tonight', satMorning)).toBe(true);
+    // Sun 22 Nov 6 AM IST: weekend, not today
+    expect(inTimeWindow('2026-11-22T00:30:00Z', null, 'weekend', satMorning)).toBe(true);
+    expect(inTimeWindow('2026-11-22T00:30:00Z', null, 'today', satMorning)).toBe(false);
+    // Already over
+    expect(inTimeWindow('2026-11-21T01:00:00Z', '2026-11-21T02:00:00Z', 'today', satMorning)).toBe(false);
+    // Started an hour ago, still going: happening now
+    expect(inTimeWindow('2026-11-21T03:30:00Z', '2026-11-21T06:00:00Z', 'now', satMorning)).toBe(true);
+  });
+});
+
+describe('priceSummary', () => {
+  it('describes free, paid and mixed events', () => {
+    expect(priceSummary(true, 0)).toBe('Free');
+    expect(priceSummary(false, null)).toBe('Free');
+    expect(priceSummary(false, 29900)).toBe('From ₹299');
+    expect(priceSummary(false, 0)).toBe('Free + paid');
   });
 });
