@@ -318,3 +318,15 @@ a.cat { text-decoration: none; }
 a.cat:hover { filter: brightness(.97); }
 .pin-picker { display: grid; gap: 8px; }
 .pin-map { height: 260px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
+
+/* ---------- week 4: social ---------- */
+.follow-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.follow-box .count { color: var(--ink); }
+.post-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.post-tile { display: block; position: relative; overflow: hidden; border-radius: 6px; }
+.post-tile .poster-art { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: grid; place-items: center; font-size: 34px; }
+a.post-tile:hover { filter: brightness(.95); }
+.post-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.post-list li { display: flex; gap: 12px; align-items: center; padding: 10px 0; }
+.post-list li + li { border-top: 1px solid var(--hair); }
+.post-list .thumb { width: 52px; height: 65px; }

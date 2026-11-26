@@ -6,6 +6,7 @@ import { categoryById, formatEventDay, formatEventTime, formatEventWhen, formatP
 import { SiteHeader } from "@/components/site-header";
 import { PosterArt } from "@/components/event-card";
 import { ShareButtons } from "@/components/share-button";
+import { SaveButton } from "@/components/social-buttons";
 import { getEventBySlug, getPrerenderSlugs, type PublicEvent } from "@/lib/public-data";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -132,7 +133,10 @@ async function EventContent({ params }: Props) {
               </p>
             </>
           )}
-          <ShareButtons title={ev.title} />
+          <div className="actions-row">
+            <SaveButton eventId={ev.id} slug={ev.slug} />
+            <ShareButtons title={ev.title} />
+          </div>
         </div>
 
         {ev.description && (

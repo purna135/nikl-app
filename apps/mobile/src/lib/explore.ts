@@ -5,7 +5,8 @@ import type { TintName } from '@nikl/tokens';
 import { supabase } from './supabase';
 
 type ExploreRow = Database['public']['Functions']['explore_events']['Returns'][number];
-type Nullable<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null };
+/** Marks RPC columns that the type generator calls non-null but that can be empty. */
+export type Nullable<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null };
 
 /**
  * One upcoming public event, at its next date. The type generator marks every RPC column as

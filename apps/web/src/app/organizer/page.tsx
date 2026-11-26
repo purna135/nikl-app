@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { formatEventWhen } from "@nikl/utils";
+import { formatEventWhen, formatTimeAgo } from "@nikl/utils";
 import { isPlatformAdmin, requireUser } from "@/lib/auth";
 import { DashSkeleton, OrganizerHeader, Pill, PosterThumb, clubStatusLabel, eventStatusLabel } from "@/components/organizer-ui";
 import { CreateClubForm } from "./create-club-form";
+import { deletePostAction } from "./actions";
+import { postMediaUrl } from "@/lib/media";
 
 export const metadata: Metadata = { title: "Organizer dashboard" };
 
-export default function OrganizerPage({ searchParams }: { searchParams: Promise<{ club?: string }> }) {
+export default function OrganizerPage({ searchParams }: { searchParams: Promise<{ club?: string; posted?: string; error?: string }> }) {
   return (
     <>
       <OrganizerHeader />
@@ -21,6 +23,9 @@ export default function OrganizerPage({ searchParams }: { searchParams: Promise<
   );
 }
 
+/** "3h", "2d" (shared with the app). Runs per request, after the login check. */
+const timeAgo = (iso: string) => formatTimeAgo(iso);
+
 /** Next upcoming date, how many more, and how many people are going across upcoming dates. */
 function summarizeDates(occurrences: { starts_at: string; status: string; seats_taken: number }[]) {
   const now = Date.now();
@@ -30,8 +35,8 @@ function summarizeDates(occurrences: { starts_at: string; status: string; seats_
   return { next: upcoming[0], moreDates: Math.max(0, upcoming.length - 1), going: upcoming.reduce((s, o) => s + o.seats_taken, 0) };
 }
 
-async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: string }> }) {
-  const { club: clubParam } = await searchParams;
+async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: string; posted?: string; error?: string }> }) {
+  const { club: clubParam, posted, error } = await searchParams;
   const { supabase, user } = await requireUser("/organizer");
   const [admin, { data: memberships }] = await Promise.all([
     isPlatformAdmin(supabase),
@@ -84,6 +89,17 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
 
   const rows = (events ?? []).map((e) => ({ ...e, ...summarizeDates(e.event_occurrences) }));
 
+  const [{ count: followers }, { data: posts }] = await Promise.all([
+    supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("target_type", "club").eq("target_id", club.id),
+    supabase
+      .from("posts")
+      .select("id, caption, created_at, events(title, poster_url, category), post_media(url, position), likes(count)")
+      .eq("author_type", "club")
+      .eq("author_id", club.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+  ]);
+
   return (
     <div className="stack">
       {adminBanner}
@@ -96,10 +112,21 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
               @{club.handle}
               {club.kind ? ` · ${club.kind}` : ""}
               {club.area ? ` · ${club.area}` : ""}
+              {` · ${followers ?? 0} ${followers === 1 ? "follower" : "followers"}`}
             </p>
           </div>
           <Pill tone={status.tone}>{status.label}</Pill>
         </div>
+        {error && (
+          <p className="notice notice-bad" role="alert">
+            {error.slice(0, 200)}
+          </p>
+        )}
+        {posted && (
+          <p className="notice notice-good" role="status">
+            Posted. It&apos;s in your followers&apos; feed{live ? "" : " once your page is approved"}.
+          </p>
+        )}
         {club.review_status === "pending" && (
           <p className="notice notice-warn">
             Nikl is reviewing your page (usually within a day). Set up your events now: anything you publish goes live the moment
@@ -164,6 +191,50 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
                 </li>
               );
             })}
+          </ul>
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="section-head">
+          <h2>Posts</h2>
+          {canManage && (
+            <Link href={`/organizer/posts/new?club=${club.id}`} className="btn primary">
+              New post
+            </Link>
+          )}
+        </div>
+        {(posts ?? []).length === 0 ? (
+          <div className="empty">
+            <p>No posts yet.</p>
+            <p className="muted">Post a lineup, a sneak peek or a photo from your last event. It shows in your followers&apos; feed.</p>
+          </div>
+        ) : (
+          <ul className="post-list">
+            {(posts ?? []).map((p) => (
+              <li key={p.id}>
+                <PosterThumb
+                  url={postMediaUrl([...p.post_media].sort((a, b) => a.position - b.position)[0]?.url) ?? p.events?.poster_url ?? null}
+                  category={p.events?.category ?? club.category ?? "social"}
+                />
+                <span className="event-main">
+                  <strong>{p.caption ? (p.caption.length > 80 ? `${p.caption.slice(0, 80)}…` : p.caption) : p.events?.title ?? "Photo post"}</strong>
+                  <span className="muted">
+                    {timeAgo(p.created_at)}
+                    {p.events?.title ? ` · ${p.events.title}` : ""} · {p.likes[0]?.count ?? 0} likes
+                  </span>
+                </span>
+                {canManage && (
+                  <form action={deletePostAction}>
+                    <input type="hidden" name="postId" value={p.id} />
+                    <input type="hidden" name="clubId" value={club.id} />
+                    <button type="submit" className="link danger-link">
+                      Delete
+                    </button>
+                  </form>
+                )}
+              </li>
+            ))}
           </ul>
         )}
       </section>

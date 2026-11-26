@@ -5,6 +5,7 @@ const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*'],
+    // .expo/ holds files Expo generates (typed routes), not our code.
+    ignores: ['dist/*', '.expo/*'],
   },
 ]);

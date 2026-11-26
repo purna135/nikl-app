@@ -1,25 +1,29 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatEventWhen, formatPaise } from '@nikl/utils';
 import { PosterTile } from '@/components/event-card';
+import { openClub } from '@/components/feed';
+import { IconButton, VerifiedTick } from '@/components/social';
 import { Button, EmptyState, T } from '@/components/ui';
 import { spotsLabel, upcomingDates, useEventDetail, type EventDate, type EventDetail } from '@/lib/event-detail';
 import { categoryLook } from '@/lib/explore';
+import { shareEvent, useSavedEventIds, useSocial } from '@/lib/social';
 import { fontSize, radius, space, touchTarget, useNiklTheme } from '@/theme';
-
-const shareUrl = (slug: string) => `https://nikl.app/e/${slug}`;
 
 function goBack() {
   if (router.canGoBack()) router.back();
   else router.replace('/');
 }
 
-/** One event: poster, dates and tickets, venue, share. Booking arrives in week 6. */
+/** One event: poster, dates and tickets, venue, save, share. Booking arrives in week 6. */
 export default function EventScreen() {
   const t = useNiklTheme();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { status, event, loadedAt, retry } = useEventDetail(slug);
+  const saves = useSavedEventIds();
+  const social = useSocial();
+  const saved = event ? social.isSaved(event.id, saves.data?.has(event.id) ?? false, saves.fetchedAt) : false;
 
   let body;
   if (status === 'ready' && event && loadedAt) {
@@ -57,6 +61,17 @@ export default function EventScreen() {
           style={({ pressed }) => [styles.back, { backgroundColor: t.surface2, opacity: pressed ? 0.8 : 1 }]}>
           <Text style={[styles.backGlyph, { color: t.ink }]}>←</Text>
         </Pressable>
+        {event && (
+          <View style={[styles.round, { backgroundColor: t.surface2 }]}>
+            <IconButton
+              icon={saved ? 'bookmarkOn' : 'bookmark'}
+              size={22}
+              label="Save event"
+              on={saved}
+              onPress={() => social.setSave(event.id, !saved)}
+            />
+          </View>
+        )}
       </View>
       {body}
     </SafeAreaView>
@@ -76,13 +91,6 @@ function EventBody({ event, now }: { event: EventDetail; now: Date }) {
     Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}`).catch(() =>
       Alert.alert('Couldn’t open Maps', 'Try searching for the venue in your maps app.'),
     );
-  };
-
-  const share = () => {
-    const url = shareUrl(event.slug);
-    // iOS shares the link as a rich preview; Android only takes a text message.
-    const content = Platform.OS === 'ios' ? { url, message: event.title } : { title: event.title, message: `${event.title}\n${url}` };
-    Share.share(content).catch(() => {});
   };
 
   return (
@@ -106,16 +114,18 @@ function EventBody({ event, now }: { event: EventDetail; now: Date }) {
             {event.title}
           </T>
           {club && (
-            <View style={styles.clubRow}>
+            <Pressable
+              onPress={() => openClub(club.handle)}
+              accessibilityRole="button"
+              accessibilityLabel={`By ${club.name}${club.verified ? ', verified' : ''}`}
+              accessibilityHint="Opens the club’s profile"
+              style={({ pressed }) => [styles.clubRow, { opacity: pressed ? 0.7 : 1 }]}>
               <T variant="muted">
                 by <Text style={{ color: t.ink, fontWeight: '600' }}>{club.name}</Text>
               </T>
-              {club.verified && (
-                <View style={[styles.tick, { backgroundColor: t.ink }]} accessible accessibilityLabel="Verified club">
-                  <Text style={[styles.tickGlyph, { color: t.app }]}>✓</Text>
-                </View>
-              )}
-            </View>
+              {club.verified && <VerifiedTick size={18} />}
+              <Text style={[styles.chevron, { color: t.muted }]}>›</Text>
+            </Pressable>
           )}
         </View>
 
@@ -148,7 +158,7 @@ function EventBody({ event, now }: { event: EventDetail; now: Date }) {
           {hasPin && <Button label="Open in Maps" kind="secondary" onPress={openMaps} />}
         </View>
 
-        <Button label="Share" kind="secondary" onPress={share} />
+        <Button label="Share" kind="secondary" onPress={() => shareEvent(event.title, event.slug)} />
       </ScrollView>
 
       <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: t.app, borderTopColor: t.hair }]}>
@@ -188,16 +198,16 @@ function DateCard({ date }: { date: EventDate }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  topBar: { paddingHorizontal: space.lg, paddingVertical: space.sm, flexDirection: 'row' },
+  topBar: { paddingHorizontal: space.lg, paddingVertical: space.sm, flexDirection: 'row', justifyContent: 'space-between' },
   back: { width: touchTarget, height: touchTarget, borderRadius: touchTarget / 2, alignItems: 'center', justifyContent: 'center' },
+  round: { width: touchTarget, height: touchTarget, borderRadius: touchTarget / 2, overflow: 'hidden' },
   backGlyph: { fontSize: 22, fontWeight: '600' },
   content: { padding: space.lg, paddingTop: space.xs, gap: space.xl },
   poster: { width: '100%', borderRadius: radius.lg },
   tag: { alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs + 2 },
   tagText: { fontSize: fontSize.sm, fontWeight: '600' },
-  clubRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  tick: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  tickGlyph: { fontSize: 11, fontWeight: '800' },
+  clubRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: touchTarget, alignSelf: 'flex-start' },
+  chevron: { fontSize: 22, marginTop: -2 },
   description: { lineHeight: 22 },
   section: { gap: space.md },
   dateCard: { borderWidth: 1, borderRadius: radius.lg, padding: space.md, gap: space.sm },

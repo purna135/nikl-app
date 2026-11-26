@@ -175,3 +175,7 @@ set starts_at = o.starts_at + make_interval(days => a.saturday - date '2026-11-2
     ends_at   = o.ends_at   + make_interval(days => a.saturday - date '2026-11-21')
 from anchor a
 where o.id::text like 'd0000000-%';
+
+-- Sample stories stay up for two weeks after a reset (real stories last 24 hours), so the
+-- stories row in the app has something to show during local testing.
+update public.stories set expires_at = now() + interval '14 days' where id::text like '50000000-%';

@@ -4,7 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { categoryById } from "@nikl/utils";
 import { SiteHeader } from "@/components/site-header";
-import { EventCard } from "@/components/event-card";
+import { EventCard, PosterArt } from "@/components/event-card";
+import { FollowButton } from "@/components/social-buttons";
+import { postMediaUrl } from "@/lib/media";
 import { getClubByHandle, getPrerenderHandles } from "@/lib/public-data";
 
 type Props = { params: Promise<{ handle: string }> };
@@ -48,7 +50,7 @@ async function ClubContent({ params }: Props) {
   const { handle } = await params;
   const data = await getClubByHandle(handle);
   if (!data) notFound();
-  const { club, events } = data;
+  const { club, events, posts } = data;
   const cat = club.category ? categoryById(club.category) : undefined;
 
   return (
@@ -75,6 +77,8 @@ async function ClubContent({ params }: Props) {
         </div>
       </header>
 
+      <FollowButton clubId={club.id} handle={club.handle} />
+
       {club.bio && <p className="lead" style={{ fontSize: 16 }}>{club.bio}</p>}
 
       <section className="stack" aria-labelledby="club-events">
@@ -98,6 +102,39 @@ async function ClubContent({ params }: Props) {
           </ul>
         )}
       </section>
+
+      {posts.length > 0 && (
+        <section className="stack" aria-labelledby="club-posts">
+          <h2 id="club-posts" style={{ fontSize: 20 }}>
+            Posts
+          </h2>
+          <ul className="post-grid">
+            {posts.map((p) => {
+              const photo = postMediaUrl(p.mediaPath);
+              const label = p.caption ?? p.event?.title ?? "Post";
+              const tile = photo ? (
+                // eslint-disable-next-line @next/next/no-img-element -- post photos live in Supabase Storage
+                <img src={photo} alt={label} className="poster-art" loading="lazy" />
+              ) : (
+                <PosterArt url={p.event?.poster_url ?? null} category={p.event?.category ?? club.category ?? "social"} />
+              );
+              return (
+                <li key={p.id}>
+                  {p.event ? (
+                    <Link href={`/e/${p.event.slug}`} className="post-tile" title={label}>
+                      {tile}
+                    </Link>
+                  ) : (
+                    <span className="post-tile" title={label}>
+                      {tile}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }

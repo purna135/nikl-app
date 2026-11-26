@@ -4,6 +4,7 @@ import {
   cartTotals,
   formatEventWhen,
   formatIndianPhone,
+  formatTimeAgo,
   formatPaise,
   normalizeIndianPhone,
   inTimeWindow,
@@ -66,6 +67,19 @@ describe('dates', () => {
     expect(formatEventWhen('2026-11-21T14:00:00Z')).toBe('Sat, 21 Nov · 7:30 PM');
     // 00:30 UTC = 6:00 AM IST
     expect(formatEventWhen('2026-11-22T00:30:00Z')).toBe('Sun, 22 Nov · 6:00 AM');
+  });
+
+  it('says how long ago a post was made', () => {
+    const now = new Date('2026-11-27T12:00:00Z');
+    expect(formatTimeAgo('2026-11-27T11:59:30Z', now)).toBe('Just now');
+    expect(formatTimeAgo('2026-11-27T12:05:00Z', now)).toBe('Just now'); // phone clock behind
+    expect(formatTimeAgo('2026-11-27T11:55:00Z', now)).toBe('5m');
+    expect(formatTimeAgo('2026-11-27T10:00:00Z', now)).toBe('2h');
+    expect(formatTimeAgo(new Date('2026-11-24T09:00:00Z'), now)).toBe('3d');
+    expect(formatTimeAgo('2026-11-13T12:00:00Z', now)).toBe('2w');
+    // After 5 weeks: the date in IST (00:30 IST on 1 Oct is still 30 Sep in UTC)
+    expect(formatTimeAgo('2026-09-30T19:00:00Z', now)).toBe('1 Oct');
+    expect(formatTimeAgo('2025-12-25T06:00:00Z', now)).toBe('25 Dec 2025');
   });
 });
 

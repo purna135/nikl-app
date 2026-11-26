@@ -789,6 +789,9 @@ isOneToOne: false
 "create_club":
 { Args: { "p_area"?: string,"p_bio"?: string,"p_category": string,"p_handle": string,"p_kind"?: string,"p_name": string }; Returns: string
                            },
+"create_club_post":
+{ Args: { "p_caption"?: string,"p_club_id": string,"p_event_id"?: string,"p_media_paths"?: (string)[] }; Returns: string
+                           },
 "create_event":
 { Args: { "p_capacity"?: number,"p_category": string,"p_club_id": string,"p_description"?: string,"p_ends_at"?: string,"p_poster_url"?: string,"p_publish"?: boolean,"p_repeat_weeks"?: number,"p_starts_at": string,"p_tags"?: (string)[],"p_tiers"?: Json,"p_title": string,"p_venue_address"?: string,"p_venue_area"?: string,"p_venue_id"?: string,"p_venue_lat"?: number,"p_venue_lng"?: number,"p_venue_name"?: string }; Returns: string
                            },
@@ -798,6 +801,11 @@ isOneToOne: false
 "explore_events":
 { Args: { "p_from"?: string,"p_to"?: string }; Returns: {
               "area": string,"category": string,"club_handle": string,"club_name": string,"club_verified": boolean,"ends_at": string,"event_id": string,"going": number,"is_free": boolean,"lat": number,"lng": number,"min_price_paise": number,"more_dates": number,"occurrence_id": string,"poster_url": string,"slug": string,"spots_left": number,"starts_at": string,"tags": (string)[],"title": string,"venue_name": string
+            }[]
+                           },
+"home_feed":
+{ Args: { "p_limit"?: number }; Returns: {
+              "area": string,"caption": string,"club_category": string,"club_handle": string,"club_id": string,"club_logo_url": string,"club_name": string,"club_verified": boolean,"created_at": string,"event_category": string,"event_id": string,"event_slug": string,"event_title": string,"following": boolean,"is_free": boolean,"kind": string,"like_count": number,"liked": boolean,"media_path": string,"min_price_paise": number,"post_id": string,"poster_url": string,"saved": boolean,"starts_at": string,"suggested": boolean,"venue_name": string
             }[]
                            },
 "is_club_admin":
@@ -850,6 +858,20 @@ isOneToOne: false
       } },
 "set_event_pin":
 { Args: { "p_event_id": string,"p_lat"?: number,"p_lng"?: number }; Returns: undefined
+                           },
+"set_follow_club":
+{ Args: { "p_club_id": string,"p_on": boolean }; Returns: undefined
+                           },
+"set_like":
+{ Args: { "p_on": boolean,"p_post_id": string }; Returns: undefined
+                           },
+"set_save":
+{ Args: { "p_event_id": string,"p_on": boolean }; Returns: undefined
+                           },
+"suggested_clubs":
+{ Args: { "p_limit"?: number }; Returns: {
+              "area": string,"category": string,"club_id": string,"followers": number,"handle": string,"kind": string,"logo_url": string,"name": string,"verified": boolean
+            }[]
                            }
           }
           Enums: {

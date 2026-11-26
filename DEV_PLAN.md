@@ -320,6 +320,18 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 | AI poster reading | ⏸ On hold (T23); button hidden |
 | Independent code review (T22): 9 findings (3 important: Explore filter stuck after navigating, ended paid events shown as "Free", list hover moving the map), 8 fixed; the repeating-events filter limit is logged as an open question | ✅ |
 
+### Week 4 status (27 Nov 2026): the social layer (M1: internal alpha)
+
+| Item | Status |
+|---|---|
+| Database: one-tap `set_follow_club` / `set_like` / `set_save`, `create_club_post` (photos only from Nikl storage, S13), ranked `home_feed` (T28), `suggested_clubs`, `post-media` storage bucket | ✅ Migration `20261127000000`; 16 new database tests (55 in total) |
+| **App Home = Instagram-style feed** (D9): club stories row, post cards (club header + Follow, photo or poster, event strip with Book/RSVP, like · comment · share · save, likes, caption, time), "Clubs you might like", "You're all caught up" | ✅ Typecheck, lint, Android bundle pass. **Not yet seen on a phone.** |
+| App club profile (avatar, upcoming / followers / rating, Follow, posts grid, upcoming events), Save on the event screen, **Saved** list under You | ✅ Same checks. Not yet seen on a phone. |
+| Web: Follow (with live follower count) on club pages, Save on event pages, club posts grid; organizer **New post** (photo, event, caption) and a Posts panel with likes and delete | ✅ Tested in the browser: follow / save / post / delete; deleting also removes the photo file |
+| Sample data: events always in the coming week, sample stories stay up two weeks after a reset | ✅ |
+| Independent reviews (T22): database + web 7 findings (3 important: deleted photos still reachable, silent delete failures, photo posts tied to an event by default) and app 6 findings (2 important: share links to a domain Nikl doesn't own yet, a stuck spinner after logging out mid-refresh); 9 fixed, 4 left with reasons | ✅ |
+| Not yet: story viewer, user posts and "+" create (week 5), comments (P1), web feed for logged-in people (D9) | ⏳ |
+
 Decisions made during setup:
 - Phone numbers and year of birth sit in an owner-only `profiles_private` table, and Razorpay details in an admin-only `club_payout_settings` table. `profiles` itself is public.
 - The web app reads the session in the browser for week 1. Server-side session checks (behind `<Suspense>`, as Cache Components requires) arrive with the organizer dashboard in week 2.

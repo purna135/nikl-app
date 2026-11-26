@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { categoryById, formatIndianPhone } from '@nikl/utils';
+import { EventCard } from '@/components/event-card';
 import { Button, EmptyState, Screen, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { useExploreEvents } from '@/lib/explore';
 import { isProfileComplete, useMyProfile } from '@/lib/profile';
+import { useSavedEventIds, useSocial } from '@/lib/social';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { radius, space, useNiklTheme } from '@/theme';
 
 export default function ProfileScreen() {
-  const t = useNiklTheme();
   const { loading, session } = useAuth();
 
   if (!supabaseConfigured) {
@@ -88,9 +90,58 @@ function SignedInProfile({ userId, phone }: { userId: string; phone?: string }) 
         </View>
         <T variant="small">Phone (only you can see this): {phoneText}</T>
       </View>
+      <SavedEvents />
       <T variant="muted">Your plans, memories and City Passport will live here.</T>
       <Button label="Log out" kind="secondary" onPress={() => supabase?.auth.signOut()} />
     </Screen>
+  );
+}
+
+/** Upcoming events you saved (bookmarked), soonest first. */
+function SavedEvents() {
+  const t = useNiklTheme();
+  const saves = useSavedEventIds();
+  const explore = useExploreEvents();
+  const social = useSocial();
+
+  const saved = explore.rows.filter((e) => social.isSaved(e.event_id, saves.data?.has(e.event_id) ?? false, saves.fetchedAt));
+  const retry = () => {
+    saves.refresh();
+    explore.refresh();
+  };
+
+  let body;
+  if (saves.loading || explore.loading) {
+    body = <ActivityIndicator color={t.muted} accessibilityLabel="Loading saved events" style={{ marginVertical: space.lg }} />;
+  } else if ((saves.failed && !saves.data) || (explore.error && explore.rows.length === 0)) {
+    body = (
+      <EmptyState
+        emoji="📡"
+        title="Couldn’t load your saved events"
+        body="Check your internet connection and try again."
+        action={{ label: 'Try again', onPress: retry }}
+      />
+    );
+  } else if (saved.length === 0) {
+    body = (
+      <EmptyState
+        emoji="🔖"
+        title="Nothing saved yet"
+        body="Tap the bookmark on a post or an event to keep it here for later."
+        action={{ label: 'Find something to do', onPress: () => router.navigate('/explore') }}
+      />
+    );
+  } else {
+    body = saved.map((e) => <EventCard key={e.event_id} event={e} />);
+  }
+
+  return (
+    <View style={styles.section}>
+      <T variant="heading" accessibilityRole="header">
+        Saved
+      </T>
+      {body}
+    </View>
   );
 }
 
@@ -98,4 +149,5 @@ const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, padding: space.lg, gap: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs, marginVertical: space.xs },
   chip: { paddingHorizontal: space.sm + 2, paddingVertical: space.xs + 2, borderRadius: radius.pill },
+  section: { gap: space.md },
 });

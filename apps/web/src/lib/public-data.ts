@@ -81,7 +81,7 @@ export async function getPrerenderSlugs(): Promise<string[]> {
 export async function getClubByHandle(handle: string) {
   "use cache";
   cacheLife("minutes");
-  cacheTag("clubs", "events", `club:${handle}`);
+  cacheTag("clubs", "events", "posts", `club:${handle}`);
   const supabase = publicClient();
   if (!supabase || !/^[a-z0-9._]{3,30}$/.test(handle)) return null;
   const { data: club } = await supabase
@@ -90,8 +90,25 @@ export async function getClubByHandle(handle: string) {
     .eq("handle", handle)
     .maybeSingle();
   if (!club) return null;
-  const events = (await getUpcomingEvents()).filter((r) => r.club_handle === club.handle);
-  return { club, events };
+  const [events, { data: posts, error }] = await Promise.all([
+    getUpcomingEvents().then((rows) => rows.filter((r) => r.club_handle === club.handle)),
+    supabase
+      .from("posts")
+      .select("id, kind, caption, created_at, events(slug, title, poster_url, category), post_media(url, position)")
+      .eq("author_type", "club")
+      .eq("author_id", club.id)
+      .eq("moderation_status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+  if (error) console.error("club posts failed:", error.message);
+  const postTiles = (posts ?? []).map((p) => ({
+    id: p.id,
+    caption: p.caption,
+    event: p.events,
+    mediaPath: [...p.post_media].sort((a, b) => a.position - b.position)[0]?.url ?? null,
+  }));
+  return { club, events, posts: postTiles };
 }
 
 export async function getPrerenderHandles(): Promise<string[]> {

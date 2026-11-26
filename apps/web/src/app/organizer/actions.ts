@@ -5,6 +5,7 @@ import { refresh, updateTag } from "next/cache";
 import { clubFormSchema, eventFormSchema } from "@nikl/validation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { dbErrorMessage, fieldErrorsFrom, type ActionResult } from "@/lib/errors";
+import { POST_MEDIA_PATH } from "@/lib/media";
 
 const text = (fd: FormData, key: string) => {
   const v = fd.get(key);
@@ -153,6 +154,57 @@ export async function updateEventAction(_prev: ActionResult | null, fd: FormData
   refreshPublic();
   refresh();
   return { ok: true, message: "Saved." };
+}
+
+/** Club post: optional photo (already uploaded to the user's own folder), optional event, caption. */
+export async function createPostAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const clubId = text(fd, "clubId");
+  const caption = text(fd, "caption");
+  const eventId = text(fd, "eventId");
+  const mediaPath = text(fd, "mediaPath");
+  if (!clubId) return { ok: false, message: "Missing club." };
+  if (caption && caption.length > 2200) {
+    return { ok: false, message: "Check the highlighted fields.", fieldErrors: { caption: "Keep it under 2,200 characters." } };
+  }
+  if (!caption && !eventId && !mediaPath) return { ok: false, message: "Add a photo, pick an event, or write something." };
+  const { supabase, user } = await signedIn();
+  if (!user) return { ok: false, message: "Your session expired. Log in again." };
+  if (mediaPath && (!POST_MEDIA_PATH.test(mediaPath) || !mediaPath.startsWith(`${user.id}/`))) {
+    return { ok: false, message: "Upload the photo again." };
+  }
+  const { error } = await supabase.rpc("create_club_post", {
+    p_club_id: clubId,
+    p_caption: caption,
+    p_event_id: eventId,
+    p_media_paths: mediaPath ? [mediaPath] : [],
+  });
+  if (error) return { ok: false, message: dbErrorMessage(error) };
+  updateTag("posts");
+  redirect(`/organizer?club=${clubId}&posted=1`);
+}
+
+/** Delete one of the club's posts, and its photos from storage so old links stop working. */
+export async function deletePostAction(fd: FormData): Promise<void> {
+  const id = text(fd, "postId");
+  const clubId = text(fd, "clubId");
+  if (!id) return;
+  const back = (error?: string) =>
+    redirect(`/organizer?${new URLSearchParams({ ...(clubId ? { club: clubId } : {}), ...(error ? { error } : {}) })}`);
+  const { supabase, user } = await signedIn();
+  if (!user) redirect("/login?next=/organizer");
+
+  const { data: media } = await supabase.from("post_media").select("url").eq("post_id", id);
+  const { data, error } = await supabase.from("posts").delete().eq("id", id).eq("author_type", "club").select("id");
+  if (error || !data?.length) back(error ? dbErrorMessage(error) : "Only the club's owners and admins can delete posts.");
+
+  // Files live in the uploader's own folder; storage rules only let them remove their own.
+  const paths = (media ?? []).map((m) => m.url).filter((p) => POST_MEDIA_PATH.test(p));
+  if (paths.length > 0) {
+    const { error: rmError } = await supabase.storage.from("post-media").remove(paths);
+    if (rmError) console.error("post photo cleanup failed:", rmError.message);
+  }
+  updateTag("posts");
+  back();
 }
 
 /** Add, move or remove an event's map pin (the database gives the event its own venue copy). */

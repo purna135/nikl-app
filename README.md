@@ -94,4 +94,4 @@ CI (GitHub Actions) runs typecheck, lint, tests and the web build on every pull 
 
 ## Status
 
-Weeks 1–3 done: login, organizer dashboard, club approval, events with weekly repeats and tickets, profile set-up, and Explore (Mapbox map by default, filters, search), public event and club pages, venue pins. AI poster reading is built but on hold. Next (week 4): feed, follow, like, save. Details in DEV_PLAN.md §7.
+Weeks 1–4 done: login, organizer dashboard, club approval, events with weekly repeats and tickets, profile set-up, Explore (Mapbox map by default, filters, search), public event and club pages, venue pins, and the social layer (Instagram-style Home feed in the app, club stories row, club profiles, follow, like, save, club posts). AI poster reading is built but on hold. Next (week 5): stories viewer, user photo posts, moderation, report/block. Details in DEV_PLAN.md §7.

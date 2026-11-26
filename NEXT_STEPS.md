@@ -19,14 +19,15 @@ Secrets go in your **password manager** and the service's own settings page (Sup
 
 ---
 
-## Try it yourself (weeks 2–3 are done)
+## Try it yourself (weeks 2–4 are done)
 
 1. Make sure **Docker Desktop** is running.
 2. In PowerShell in the project folder, run `pnpm dev:web`.
-3. Open http://localhost:3000/explore: the map of sample Bhubaneswar events. Try **Tonight**, **This weekend**, **Free**, a category, or search "patia". Tap a pin, then open an event page.
-4. Open http://localhost:3000/organizer and log in with `98765 43210`, code `123456`. On your local copy this test account is also a **Nikl admin**, so you can approve your own test club at http://localhost:3000/admin/clubs.
-5. Try: create a club page → add an event and **tap the map to drop the venue pin** → approve the club → the event appears on the Explore map straight away.
-6. On your phone (1.2), the **Explore** tab shows the same events as a list with search and filters; tap one for the event screen.
+3. Open http://localhost:3000/explore: the map of sample Bhubaneswar events. Try **Tonight**, **This weekend**, **Free**, a category, or search "patia". Tap a pin, then open an event page and press **Save**.
+4. Open a club page (e.g. http://localhost:3000/c/patia.pacers) and press **Follow**: you'll be asked to log in with `98765 43210`, code `123456`, then come straight back.
+5. Open http://localhost:3000/organizer. On your local copy this test account is also a **Nikl admin**, so you can approve your own test club at http://localhost:3000/admin/clubs.
+6. Try: create a club page → add an event and **tap the map to drop the venue pin** → approve the club → press **New post**, add a photo and pick the event → it shows on your club page and in the app's Home feed.
+7. On your phone (1.2): **Home** is now the social feed (club stories, posts with Book/RSVP, like, save, follow); tap a club for its profile; your saved events are under **You**. Explore shows the list in Expo Go (the map needs the test build, 1.7).
 
 The poster button is hidden while AI poster reading is on hold (your call, 21 Nov 2026).
 
