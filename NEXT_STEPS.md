@@ -34,7 +34,7 @@ The poster button is hidden while AI poster reading is on hold (your call, 21 No
 
 | # | What | Blocking? |
 |---|---|---|
-| 1 | **Expo account + login** (1.7) so Claude can make the first Nikl test build with the phone map. | No. Week 4 can start; the phone map needs the build to be seen. |
+| 1 | **Log in to Expo and start the first test build** (1.7, two commands) to see the phone map. | No. Week 4 can start; the phone map needs the build to be seen. |
 | 2 | **Restrict your Mapbox token** (1.5, last step). | No, but do it before sharing links widely. |
 | 3 | Decide the **domain** (2.5), since public event links will look like `nikl.app/e/...`. | No, the links can change later. |
 | 4 | **Anthropic key** (1.6): on hold, as you asked. | No. |
@@ -112,11 +112,16 @@ Linking lets Claude copy the tables and sample data to the hosted project, using
 
 ### 1.7 Install the Nikl test build on your Android phone (15 min of yours + about 20 min of cloud build) — *for the phone map*
 The phone map uses Mapbox's native code, which Expo Go can't run, so you install Nikl's own **test build** once. After that it loads the latest code from your PC like Expo Go does. You only reinstall when Claude says a new build is needed (new native features).
-- [ ] Go to **expo.dev** → **Sign up** (free). Use your email; pick a username.
+- [x] Expo account and the **nikl** project created on expo.dev (26 Nov 2026). Claude linked it in the code (`apps/mobile/app.json`), which is all `eas init --id …` does, so skip that command.
+  *Skip the other steps on Expo's "get started" page: `create-expo-app` would make a new blank app (Nikl already exists), and "production build" / "submit" come later, once the Play Store account exists (section 3).*
 - [ ] In **PowerShell**, go to the app folder: `cd "D:\Product Development\Club App\apps\mobile"`
 - [ ] Run `npx eas-cli@latest login` and type your Expo username/email and password **in PowerShell** (never in chat).
-- [ ] Tell Claude **"Expo logged in"**. Claude then links the project (`eas init`), stores the public app settings for test builds, and starts the first Android build in Expo's cloud. The free plan includes a monthly allowance of builds, which is plenty for us.
-- [ ] When Claude sends the build link, open it **on your Android phone** → **Install** → download the APK and open it. Android asks to allow installs from your browser: allow it for this once.
+- [ ] Start the first test build: `npx eas-cli@latest build --profile development --platform android`
+  - If it asks **"Generate a new Android Keystore?"**, answer **Yes**. This is the key that signs the app; Expo stores it safely for you.
+  - If it asks which account owns the project, pick yours.
+  - The build runs in Expo's cloud (about 15–25 minutes; you can close the window, it continues). It ends with a link and a QR code; the build also appears on expo.dev → your project → **Builds**. The free plan includes a monthly allowance of builds, which is plenty for us.
+  - If it stops with an error, copy the last lines into the chat (they contain no passwords). Or run these commands in the Claude app's **Terminal** panel, which Claude can read directly.
+- [ ] Open the build link (or scan the QR code) **on your Android phone** → **Install** → download the APK and open it. Android asks to allow installs from your browser: allow it for this once.
 - [ ] On your PC (Docker Desktop running, phone on the same Wi-Fi): run `pnpm dev:mobile` in the project folder. Open the **Nikl** app on the phone; it finds your PC, or scan the QR code from the terminal with the phone's camera.
 - [ ] Open **Explore**: it starts on the map. Tap a pin for the event card, or switch to **List**.
 

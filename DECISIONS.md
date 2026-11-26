@@ -148,6 +148,7 @@
 
 ## Change history
 
+- **26 Nov 2026:** EAS project **nikl** created by the founder and linked in `apps/mobile/app.json` (project ID only, nothing secret). The founder starts builds from their own terminal (T26).
 - **26 Nov 2026:** Founder chose `@rnmapbox/maps` for the phone map: T25 updated (map built; Expo Go shows the list), added T26 (EAS builds and profiles). Removed "Mobile map library" from open questions.
 - **21 Nov 2026 (week 3):** Added D7 (Explore filters and map pins), D8 (organizers tap a map to set the venue pin), T23 (AI poster reading on hold), T24 (cached public pages with instant refresh), T25 (mobile Explore is a list for now), S12 (public Mapbox token, restricted by URL). New open questions: mobile map library, repeating events in Explore filters. T7 in practice: Mapbox is in; Google Places waits for a Google key (D8).
 - **21 Nov 2026:** Added T22 (independent review before every commit), P16 (profile set-up after first login), S10 (verified login + daily limit for AI), S11 (posters only from our storage). T8 in practice: poster reading uses Claude Haiku 5.5 by default, switchable with `POSTER_AI_MODEL`.
