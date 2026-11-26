@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CATEGORIES, TIME_FILTERS, inTimeWindow, type TimeFilter } from "@nikl/utils";
+import { CATEGORIES, TIME_FILTERS, inTimeWindow, stackBySpot, type TimeFilter } from "@nikl/utils";
 import { EventCard } from "@/components/event-card";
 import { EventsMap, type MapPoint } from "@/components/events-map";
 import type { ExploreRow } from "@/lib/public-data";
@@ -30,7 +30,16 @@ export function ExploreView({ rows, initialCategory }: { rows: ExploreRow[]; ini
     );
   }, [rows, time, category, freeOnly, query]);
 
-  const points: MapPoint[] = useMemo(() => spreadSameSpot(filtered), [filtered]);
+  // Events at the same venue are numbered so the map can fan their pins out instead of stacking them.
+  const points: MapPoint[] = useMemo(
+    () =>
+      stackBySpot(
+        filtered.flatMap((r) =>
+          r.lat != null && r.lng != null ? [{ id: r.event_id, lat: r.lat, lng: r.lng, category: r.category, title: r.title }] : [],
+        ),
+      ),
+    [filtered],
+  );
   const noPin = filtered.length - points.length;
   const selected = filtered.find((r) => r.event_id === selectedId) ?? null;
 
@@ -142,19 +151,4 @@ export function ExploreView({ rows, initialCategory }: { rows: ExploreRow[]; ini
       )}
     </div>
   );
-}
-
-/**
- * Events at the same venue would put pins exactly on top of each other, hiding all but one.
- * Number them per spot; the map fans them out by a few pixels so each can be tapped at any zoom.
- */
-function spreadSameSpot(rows: ExploreRow[]): MapPoint[] {
-  const seen = new Map<string, number>();
-  return rows.flatMap((r) => {
-    if (r.lat == null || r.lng == null) return [];
-    const key = `${r.lat.toFixed(5)},${r.lng.toFixed(5)}`;
-    const stack = seen.get(key) ?? 0;
-    seen.set(key, stack + 1);
-    return [{ id: r.event_id, lat: r.lat, lng: r.lng, category: r.category, title: r.title, stack }];
-  });
 }

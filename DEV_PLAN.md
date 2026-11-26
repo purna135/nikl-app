@@ -315,7 +315,8 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 | Web **club page** (`/c/[handle]`) and **home** "This weekend" picks (falls back to "Coming up") | ✅ |
 | Organizer: tap-the-map venue pin when creating an event, and a "Map pin" panel on the manage page | ✅ Tested end to end: the pin shows on Explore straight after saving |
 | Public pages stay fast (cached) and update the moment an organizer or admin changes something (T24) | ✅ Tested: publish → appears, cancel → disappears |
-| Mobile: Explore list (search, same filters, pull to refresh), event screen (Open in Maps, share), home "This weekend" | ✅ Typecheck, lint and Android bundle pass. **Not yet tried on a phone.** Map waits for the library decision (T25). |
+| Mobile: Explore list (search, same filters, pull to refresh), event screen (Open in Maps, share), home "This weekend" | ✅ Typecheck, lint and Android bundle pass. **Not yet tried on a phone.** |
+| Mobile **map** (26 Nov, T25/T26): `@rnmapbox/maps` with emoji pins, tap → event card, Map/List switch, refresh, fanned-out pins at the same venue; Expo Go falls back to the list. EAS build profiles (development / preview / production) | ✅ Typecheck, lint, Expo Doctor 20/20, Android bundle pass; config plugin loads. **Needs the first test build (NEXT_STEPS 1.7) to be seen on a phone.** Known: the mobile app's own web export fails on `localStorage` during server rendering (existing; the website is `apps/web`, so no user impact). Android storage permissions come from Expo defaults; review before the Play Store listing. |
 | AI poster reading | ⏸ On hold (T23); button hidden |
 | Independent code review (T22): 9 findings (3 important: Explore filter stuck after navigating, ended paid events shown as "Free", list hover moving the map), 8 fixed; the repeating-events filter limit is logged as an open question | ✅ |
 

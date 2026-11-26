@@ -34,7 +34,7 @@ The poster button is hidden while AI poster reading is on hold (your call, 21 No
 
 | # | What | Blocking? |
 |---|---|---|
-| 1 | **Pick the mobile map library** (DECISIONS.md → open questions). Claude recommends `@rnmapbox/maps`, which means installing a test build of Nikl on your phone instead of Expo Go. | No. Week 4 can start; the phone map waits for this. |
+| 1 | **Expo account + login** (1.7) so Claude can make the first Nikl test build with the phone map. | No. Week 4 can start; the phone map needs the build to be seen. |
 | 2 | **Restrict your Mapbox token** (1.5, last step). | No, but do it before sharing links widely. |
 | 3 | Decide the **domain** (2.5), since public event links will look like `nikl.app/e/...`. | No, the links can change later. |
 | 4 | **Anthropic key** (1.6): on hold, as you asked. | No. |
@@ -59,7 +59,7 @@ Claude then: starts the local database, fills in the local env files, tests phon
 ### 1.2 Try the app on your phone (5 min) — *optional but recommended*
 - [ ] Install **Expo Go** from the Play Store on your Android phone.
 - [ ] Keep the phone on the same Wi-Fi as your PC, and keep Docker Desktop running.
-- [ ] In PowerShell in the project folder, run `pnpm dev:mobile`, then scan the QR code with Expo Go.
+- [ ] In PowerShell in the project folder, run `pnpm dev:mobile:go`, then scan the QR code with Expo Go. *(Expo Go shows Explore as a list. For the map, use the Nikl test build in 1.7.)*
 - [ ] Go to the **You** tab → **Log in with your phone** → number `98765 43210`, code `123456`.
 - [ ] If Windows asks whether to allow access on private networks, click **Allow** (the phone needs to reach the local database).
 
@@ -110,6 +110,16 @@ Linking lets Claude copy the tables and sample data to the hosted project, using
   - For local testing, create a file `supabase\functions\.env` containing one line: `ANTHROPIC_API_KEY=` followed by your key. Git ignores this file.
 - [ ] Tell Claude **"Anthropic key stored"**.
 
+### 1.7 Install the Nikl test build on your Android phone (15 min of yours + about 20 min of cloud build) — *for the phone map*
+The phone map uses Mapbox's native code, which Expo Go can't run, so you install Nikl's own **test build** once. After that it loads the latest code from your PC like Expo Go does. You only reinstall when Claude says a new build is needed (new native features).
+- [ ] Go to **expo.dev** → **Sign up** (free). Use your email; pick a username.
+- [ ] In **PowerShell**, go to the app folder: `cd "D:\Product Development\Club App\apps\mobile"`
+- [ ] Run `npx eas-cli@latest login` and type your Expo username/email and password **in PowerShell** (never in chat).
+- [ ] Tell Claude **"Expo logged in"**. Claude then links the project (`eas init`), stores the public app settings for test builds, and starts the first Android build in Expo's cloud. The free plan includes a monthly allowance of builds, which is plenty for us.
+- [ ] When Claude sends the build link, open it **on your Android phone** → **Install** → download the APK and open it. Android asks to allow installs from your browser: allow it for this once.
+- [ ] On your PC (Docker Desktop running, phone on the same Wi-Fi): run `pnpm dev:mobile` in the project folder. Open the **Nikl** app on the phone; it finds your PC, or scan the QR code from the terminal with the phone's camera.
+- [ ] Open **Explore**: it starts on the map. Tap a pin for the event card, or switch to **List**.
+
 ---
 
 ## 2. Start now: these take weeks
@@ -153,7 +163,7 @@ Indian rules (TRAI) require every business that sends SMS to register on a DLT p
 | Task | Your steps | Then Claude |
 |---|---|---|
 | **Web hosting: Vercel** | vercel.com → sign up with GitHub → **Import** the repo → root directory `apps/web`. Commercial use needs the **Pro** plan; Hobby is non-commercial only. | Sets environment variables and configures preview/production deploys. |
-| **App builds: Expo / EAS** | expo.dev → sign up → in a terminal run `npx eas-cli@latest login` and type your password. | Runs `eas init`, sets up build profiles and makes the first Android build. |
+| **App builds: Expo / EAS** | Moved up to **1.7** (needed now for the phone map). | Build profiles are ready in `apps/mobile/eas.json`. |
 | **Google Play Console** | Create an **organisation** account (needs D-U-N-S), pay the one-time **$25**, complete identity checks, create the app "Nikl". | Drafts the store listing, Data safety answers and screenshots. |
 | **Supabase staging + production** | Create `nikl-staging` and `nikl-prod` (Mumbai). Production on the **paid** plan. Add secrets in each project's settings. | Links the projects, runs migrations and sets up deploys. |
 | **Sentry + PostHog** | Sign up (free tiers) and create projects. | Adds crash reporting and analytics. Sentry DSN and PostHog key are safe to share. |

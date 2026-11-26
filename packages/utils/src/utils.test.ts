@@ -9,6 +9,8 @@ import {
   inTimeWindow,
   priceSummary,
   slugify,
+  stackBySpot,
+  stackOffsetPx,
   timeWindow,
 } from './index';
 
@@ -120,5 +122,18 @@ describe('priceSummary', () => {
     expect(priceSummary(false, null)).toBe('Free');
     expect(priceSummary(false, 29900)).toBe('From ₹299');
     expect(priceSummary(false, 0)).toBe('Free + paid');
+  });
+});
+
+describe('stackBySpot', () => {
+  it('numbers events at the same spot and fans them out', () => {
+    const r = stackBySpot([
+      { id: 'a', lat: 20.35, lng: 85.82 },
+      { id: 'b', lat: 20.3, lng: 85.8 },
+      { id: 'c', lat: 20.35, lng: 85.82 },
+    ]);
+    expect(r.map((p) => p.stack)).toEqual([0, 0, 1]);
+    expect(stackOffsetPx(0)).toEqual([0, 0]);
+    expect(stackOffsetPx(1)).toEqual([0, -30]);
   });
 });

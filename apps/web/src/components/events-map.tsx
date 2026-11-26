@@ -3,16 +3,10 @@
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
-import { BBSR_CENTER, categoryById } from "@nikl/utils";
+import { BBSR_CENTER, categoryById, stackOffsetPx } from "@nikl/utils";
 
 /** `stack` numbers events at the same spot (0, 1, 2…); later ones are fanned out in pixels around the first. */
 export type MapPoint = { id: string; lat: number; lng: number; category: string; title: string; stack?: number };
-
-function stackOffset(stack = 0): [number, number] {
-  if (stack === 0) return [0, 0];
-  const angle = ((stack - 1) * Math.PI) / 3 - Math.PI / 2;
-  return [Math.round(30 * Math.cos(angle)), Math.round(30 * Math.sin(angle))];
-}
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -106,7 +100,7 @@ export function EventsMap({
       for (const p of points) {
         const existing = markers.current.get(p.id);
         if (existing) {
-          existing.marker.setOffset(stackOffset(p.stack)); // filters can change who's first at a spot
+          existing.marker.setOffset(stackOffsetPx(p.stack ?? 0)); // filters can change who's first at a spot
           continue;
         }
         const el = document.createElement("button");
@@ -118,7 +112,7 @@ export function EventsMap({
           ev.stopPropagation();
           onSelectRef.current(p.id);
         });
-        const marker = new mapboxgl.Marker({ element: el, offset: stackOffset(p.stack) }).setLngLat([p.lng, p.lat]).addTo(m);
+        const marker = new mapboxgl.Marker({ element: el, offset: stackOffsetPx(p.stack ?? 0) }).setLngLat([p.lng, p.lat]).addTo(m);
         markers.current.set(p.id, { marker, el });
       }
       if (points.length > 1) {

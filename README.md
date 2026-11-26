@@ -62,7 +62,8 @@ Local settings go in `supabase/functions/.env` (git-ignored). Without `ANTHROPIC
 
 ```powershell
 pnpm dev:web           # http://localhost:3000
-pnpm dev:mobile        # Expo: press a for Android, or scan the QR with Expo Go
+pnpm dev:mobile        # Expo dev server for the Nikl test build (has the map; see NEXT_STEPS 1.7)
+pnpm dev:mobile:go     # Same, for Expo Go (no map: Explore shows the list)
 ```
 
 ## Everyday commands
