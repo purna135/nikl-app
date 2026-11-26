@@ -162,3 +162,16 @@ on conflict (id) do nothing;
 
 -- Sample clubs were set up by Nikl, so they start approved (DECISIONS.md P15)
 update public.clubs set review_status = 'approved', reviewed_at = now() where review_status = 'pending';
+
+-- Keep the sample events upcoming --------------------------------------------------
+-- The dates above describe a sample week starting Saturday 21 Nov 2026. Move that week so its
+-- Saturday is the coming Saturday in India time (today, if it is Saturday). Weekdays stay the same.
+with anchor as (
+  select today + ((6 - extract(dow from today)::int + 7) % 7) as saturday
+  from (select (now() at time zone 'Asia/Kolkata')::date as today) t
+)
+update public.event_occurrences o
+set starts_at = o.starts_at + make_interval(days => a.saturday - date '2026-11-21'),
+    ends_at   = o.ends_at   + make_interval(days => a.saturday - date '2026-11-21')
+from anchor a
+where o.id::text like 'd0000000-%';
