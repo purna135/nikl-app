@@ -334,3 +334,27 @@ a.post-tile:hover { filter: brightness(.95); }
 /* ---------- week 5: moderation, stories ---------- */
 .mod-photos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .mod-photos img { width: 120px; height: 150px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+
+/* ---------- week 6: booking and payment ---------- */
+.pay-page, .book-page { padding-top: 24px; padding-bottom: 56px; display: grid; justify-items: center; }
+.pay-card { max-width: 460px; }
+.pay-event { display: flex; gap: 12px; align-items: center; }
+.pay-event > div { display: grid; gap: 2px; min-width: 0; }
+.pay-poster { width: 64px; height: 80px; border-radius: 10px; object-fit: cover; font-size: 26px; flex: none; }
+.pay-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14.5px; }
+.pay-lines li { display: flex; justify-content: space-between; gap: 12px; }
+.pay-total { border-top: 1px solid var(--hair); padding-top: 8px; font-weight: 700; font-size: 16px; }
+.mock-box { display: grid; gap: 10px; padding: 14px; border-radius: 14px; border: 1px dashed var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
+.book-card { width: 100%; max-width: 560px; display: grid; gap: 18px; }
+.tier-pick { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
+.tier-pick + .tier-pick { border-top: 1px solid var(--hair); }
+.tier-pick > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.stepper { display: inline-flex; align-items: center; gap: 6px; }
+.stepper button { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 20px; cursor: pointer; }
+.stepper button:disabled { opacity: .4; cursor: not-allowed; }
+.stepper output { min-width: 28px; text-align: center; font-weight: 700; }
+.date-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.ticket-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.ticket { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.ticket-codes { display: flex; gap: 8px; flex-wrap: wrap; }
+.ticket-code { font-family: ui-monospace, Consolas, monospace; font-size: 18px; font-weight: 700; letter-spacing: .08em; padding: 8px 12px; border-radius: 10px; background: var(--surface-2); }

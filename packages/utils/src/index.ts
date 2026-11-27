@@ -5,6 +5,7 @@ export * from './categories';
 export * from './windows';
 export * from './geo';
 export * from './stories';
+export * from './booking';
 
 /** "Full Moon 10K: Night Run!" → "full-moon-10k-night-run" */
 export function slugify(input: string): string {

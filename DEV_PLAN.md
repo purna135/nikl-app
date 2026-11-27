@@ -336,13 +336,24 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 
 | Item | Status |
 |---|---|
-| Database: stories (club, automatic on first publish, "Your plans"), `story_feed` + seen, people's photo posts (tag a saved event, public/friends), following people, friends = mutual follows, follow and like lists private with public counts, reports (3 people hide), blocks, review switch, admin queue (`moderation_queue`, `moderate_content`, `open_reports`, `resolve_report`) | ✅ Migration `20261127010000`; 35 new database tests (90 in total) |
+| Database: stories (club, automatic on first publish, "Your plans"), `story_feed` + seen, people's photo posts (tag a saved event, public/friends), following people, friends = mutual follows, follow and like lists private with public counts, reports (3 people hide), blocks, review switch, admin queue (`moderation_queue`, `moderate_content`, `open_reports`, `resolve_report`) | ✅ Migration `20261127010000`; 40 new database tests (95 in total) |
 | App: big story circles with "Your plans" and seen rings, full-screen story viewer, "+" → New post (1–5 photos, shrunk to 1080 px) and Share your plans, person profiles and post screen, ⋯ menu (report, block, delete), You tab with your posts and their review status | ✅ Typecheck, lint, unit tests, Android bundle; app calls checked against the local database (40 checks). **Not yet seen on a phone.** |
 | Web: `/admin/moderation` (switch, queue with photos, approve/remove with reason, other reports), organizer **New story** and a Stories panel, counts from public functions | ✅ Tested in the browser: story, queue, removal (reason, notification, photos deleted), switch |
 | Guides: `docs/FEATURES.md` and `docs/DEVELOPING.md` (updated every chunk from now on) | ✅ |
 | Independent reviews (T22): database + web 5 findings (removed photos stayed public; who-liked-what was public; club teams weren't told about removals; restore re-created the "New" story), app 5 findings (delete could wipe photos of a post that wasn't deleted); 8 fixed, 2 left with reasons | ✅ |
 | Not yet: story replies, "Join me", friend tags, private accounts / follow requests, "Today" and "Last few spots" automatic stories (need a scheduler), activity screen (week 8) | ⏳ |
 | Known: Expo Doctor flags a few Expo patch versions newer than our 2-week package age rule (e.g. expo 58.1.0, expo-crypto 58.0.9); update with `npx expo install --fix` once they're old enough | ⏳ |
+
+### Week 6 status (28 Nov 2026): booking and payments (test mode)
+
+| Item | Status |
+|---|---|
+| Database: `quote_booking`, `hold_booking` (10-minute holds with row locks, idempotent, profile + age checks), `expire_holds` every minute (pg_cron), promo codes, `my_bookings`, ticket codes, payment functions (`start_payment`, `payment_captured` with late-payment handling, `payment_failed`, webhook de-dupe) | ✅ Migration `20261128000000`; 26 new database tests (121 in total) |
+| `payments` server function: Razorpay order, checkout signature check, webhooks (signature + de-dupe), pretend payments locally; off unless `PAYMENTS_MODE` is set | ✅ Mock mode tested end to end; **real Razorpay not tried yet (needs your test keys, NEXT_STEPS 2.4)** |
+| Web: Book/RSVP, booking page (dates, tickets, promo, live price), pay page (also used by the app), Tickets page with entry codes, web profile set-up, organizer promo codes | ✅ Tested in the browser: free RSVP, paid booking with a failed then successful pretend payment, tickets, promo code creation |
+| App: Book/RSVP on the event screen, booking screen, Tickets tab (in progress with countdown, upcoming with codes, past) | ✅ Typecheck, lint, tests, Android bundle; database calls checked by script. **Not yet seen on a phone.** |
+| Independent reviews (T22): 7 findings (2 important: tapping Pay again kept seats held forever; a reused key returned an expired booking); 6 fixed, women-only enforcement logged as an open question | ✅ |
+| Not yet: QR codes and check-in, refunds and payouts, waitlist, attendee list for organizers (week 7) | ⏳ |
 
 Decisions made during setup:
 - Phone numbers and year of birth sit in an owner-only `profiles_private` table, and Razorpay details in an admin-only `club_payout_settings` table. `profiles` itself is public.

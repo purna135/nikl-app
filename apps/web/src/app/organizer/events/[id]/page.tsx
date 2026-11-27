@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { formatEventWhen, formatPaise } from "@nikl/utils";
 import { requireUser } from "@/lib/auth";
 import { DashSkeleton, OrganizerHeader, Pill, eventStatusLabel } from "@/components/organizer-ui";
-import { deleteDraftAction, setEventStatusAction, setOccurrenceStatusAction } from "../../actions";
+import { deleteDraftAction, setEventStatusAction, setOccurrenceStatusAction, setPromoActiveAction } from "../../actions";
+import { PromoForm } from "./promo-form";
 import { EditEventForm } from "./edit-event-form";
 import { EventPinForm } from "./event-pin-form";
 
@@ -44,6 +45,19 @@ async function ManageEvent({ params, searchParams }: Props) {
     .eq("id", id)
     .maybeSingle();
   if (!event) notFound();
+
+  // Promo codes are visible only to the club's owners and admins (row rules), so an empty list also
+  // means "not allowed": check the role to decide whether to show the panel.
+  const [{ data: membership }, { data: promos }] = await Promise.all([
+    supabase.from("club_members").select("role").eq("club_id", event.club_id).eq("user_id", user.id).eq("status", "active").maybeSingle(),
+    supabase
+      .from("promo_codes")
+      .select("id, code, percent_off, amount_off_paise, max_uses, used, valid_until, active, event_id")
+      .eq("club_id", event.club_id)
+      .or(`event_id.is.null,event_id.eq.${event.id}`)
+      .order("created_at", { ascending: false }),
+  ]);
+  const canEdit = membership?.role === "owner" || membership?.role === "admin";
 
   const clubLive = event.clubs?.review_status === "approved";
   const status = eventStatusLabel(event.status, clubLive);
@@ -195,8 +209,41 @@ async function ManageEvent({ params, searchParams }: Props) {
             );
           })}
         </ul>
-        <p className="hint">Changing times and ticket prices for existing dates comes with bookings (week 6).</p>
+        <p className="hint">Changing the time or prices of a date that already has bookings comes later; for now, cancel the date and add a new event.</p>
       </section>
+
+      {canEdit && (
+        <section className="panel">
+          <h2>Promo codes</h2>
+          {(promos ?? []).length > 0 && (
+            <ul className="date-list">
+              {(promos ?? []).map((p) => (
+                <li key={p.id}>
+                  <div className="date-main">
+                    <strong className="mono">{p.code}</strong>
+                    <span className="muted small">
+                      {p.percent_off ? `${p.percent_off}% off` : `${formatPaise(p.amount_off_paise ?? 0)} off`}
+                      {p.event_id ? " · this event" : " · all events"} · used {p.used}
+                      {p.max_uses ? ` of ${p.max_uses}` : ""}
+                      {p.valid_until ? ` · until ${formatEventWhen(p.valid_until).split(" · ")[0]}` : ""}
+                    </span>
+                  </div>
+                  <form action={setPromoActiveAction} className="date-side">
+                    <input type="hidden" name="promoId" value={p.id} />
+                    <input type="hidden" name="eventId" value={event.id} />
+                    <input type="hidden" name="active" value={p.active ? "false" : "true"} />
+                    {!p.active && <Pill tone="muted">Off</Pill>}
+                    <button className="link" type="submit">
+                      {p.active ? "Switch off" : "Switch on"}
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+          <PromoForm clubId={event.club_id} eventId={event.id} />
+        </section>
+      )}
     </div>
   );
 }

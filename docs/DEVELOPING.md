@@ -1,6 +1,6 @@
 # Developing Nikl
 
-> For a developer joining the project. Matches the code at the end of **week 5 (27 Nov 2026)**.
+> For a developer joining the project. Matches the code at the end of **week 6 (28 Nov 2026)**.
 > What the product does, in plain words: [FEATURES.md](FEATURES.md). Why things are the way they are: [DECISIONS.md](../DECISIONS.md) (IDs like `T24` below point there).
 
 ## 1. Quick start
@@ -25,7 +25,7 @@ Setup steps live in [README.md](../README.md#setup), so they aren't repeated her
 | `pnpm db:test` | pgTAP database tests in `supabase/tests` |
 | `pnpm typecheck` / `pnpm lint` / `pnpm test` | Every workspace, through Turborepo |
 | `pnpm build` | Production build of the website |
-| `pnpm exec supabase functions serve --env-file supabase/functions/.env` | Run Edge Functions locally |
+| `pnpm exec supabase functions serve --env-file supabase/functions/.env` | Run Edge Functions locally (needed for paying; see "Testing payments locally") |
 
 Supabase Studio (table viewer and SQL editor) runs at http://127.0.0.1:54323 while the database is up.
 
@@ -34,8 +34,8 @@ Supabase Studio (table viewer and SQL editor) runs at http://127.0.0.1:54323 whi
 | File (git-ignored) | Variables |
 |---|---|
 | `apps/web/.env.local` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_MAPBOX_TOKEN` (public `pk.` token), `NEXT_PUBLIC_POSTER_AI_ENABLED` |
-| `apps/mobile/.env` | `EXPO_PUBLIC_SUPABASE_URL` (on a phone, your PC's LAN IP), `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_MAPBOX_TOKEN`, `EXPO_PUBLIC_SITE_URL` (leave empty until the domain is live) |
-| `supabase/functions/.env` | `ANTHROPIC_API_KEY`, or `POSTER_AI_MOCK=true` for sample answers; optional `POSTER_AI_MODEL`, `POSTER_AI_DAILY_LIMIT` |
+| `apps/mobile/.env` | `EXPO_PUBLIC_SUPABASE_URL` (on a phone, your PC's LAN IP), `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_MAPBOX_TOKEN`, `EXPO_PUBLIC_SITE_URL` (leave empty until the domain is live), `EXPO_PUBLIC_WEB_URL` (the website that hosts the pay page; locally `http://<PC's LAN IP>:3000`) |
+| `supabase/functions/.env` | `ANTHROPIC_API_KEY`, or `POSTER_AI_MOCK=true` for sample answers; optional `POSTER_AI_MODEL`, `POSTER_AI_DAILY_LIMIT`. Payments: `PAYMENTS_MODE` (`mock` locally; unset = off), and for `razorpay` mode `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` (on hosted projects these are Supabase secrets) |
 
 Missing values (or the `replace-with-…` placeholders) count as "not connected": public pages and app screens show an empty state, and the login screens say which file to fill in.
 
@@ -57,7 +57,7 @@ select id from auth.users where phone = '919876543210';
 apps/web/            Next.js 16 website, organizer dashboard and Nikl admin
 apps/mobile/         Expo SDK 58 app (Expo Router), Android first
 packages/tokens/     Colours, type, spacing; one accent (Nikl pink)
-packages/utils/      Money, IST dates, phones, categories and areas, Explore time windows, map and story-viewer helpers (+ Vitest)
+packages/utils/      Money, IST dates, phones, categories and areas, Explore time windows, map, story-viewer and booking helpers (+ Vitest)
 packages/validation/ Zod schemas for forms (+ Vitest)
 packages/supabase/   Client factory, phone-OTP helpers, generated database types
 supabase/            config.toml, migrations/, tests/, functions/, seed.sql
@@ -71,19 +71,23 @@ Shared packages ship TypeScript source with no build step. The web app compiles 
 
 ### `apps/web`
 
-`next.config.ts` turns on `cacheComponents` and `partialPrefetching`. `src/proxy.ts` is Next 16's renamed middleware: it only refreshes the Supabase session cookie on `/organizer`, `/admin` and `/account` (and everything under them). It is not an auth gate; pages check the user themselves.
+`next.config.ts` turns on `cacheComponents` and `partialPrefetching`. `src/proxy.ts` is Next 16's renamed middleware: it only refreshes the Supabase session cookie on `/organizer`, `/admin` and `/account` (and everything under them), `/tickets` and `/e/<slug>/book`. It is not an auth gate; pages check the user themselves.
 
 | Route | Files in `src/app/` | Notes |
 |---|---|---|
 | `/` | `page.tsx` | Weekend picks (cached) and category tiles |
 | `/explore` | `explore/page.tsx`, `explore-view.tsx` | Server passes cached rows; the client filters, searches and switches Map/Grid |
-| `/e/[slug]` | `e/[slug]/page.tsx` | Cached event; `generateStaticParams` prerenders up to 20; Open Graph metadata |
+| `/e/[slug]` | `e/[slug]/page.tsx` | Cached event; `generateStaticParams` prerenders up to 20; Open Graph metadata; Book / RSVP link |
+| `/e/[slug]/book` | `e/[slug]/book/page.tsx`, `book-form.tsx` | `requireUser`; no username or birth year → `/account/setup?next=…`. Client form: date chips, ± per tier, promo, live price (`quote_booking`, debounced), then `hold_booking` with a fresh idempotency key → `/tickets?booked=1` (free) or `/pay/<token>` |
+| `/pay/[token]` | `pay/[token]/page.tsx`, `pay-view.tsx` | No login (P25). Reads `booking_for_payment`, calls the `payments` function (`start`, then Razorpay Checkout + `verify`, or the mock buttons + `mock_pay`). `?return=` accepts only `nikl://` / `exp(s)://` links (back to the app) |
+| `/tickets` | `tickets/page.tsx` | `my_bookings`: waiting for payment, upcoming with codes, past |
 | `/c/[handle]` | `c/[handle]/page.tsx` | Cached club, its upcoming events and approved posts |
 | `/login` | `login/login-form.tsx` | Phone OTP in the browser; `?next=` only accepts same-site paths |
-| `/account` | `account/account-view.tsx` | Still reads the session in the browser (T10) |
+| `/account` | `account/account-view.tsx` | Still reads the session in the browser (T10); links to Tickets and profile set-up |
+| `/account/setup` | `account/setup/page.tsx`, `setup-form.tsx` | Web profile set-up: `profileSetupSchema`, then `complete_profile`; `?next=` same-site paths only |
 | `/organizer` | `organizer/page.tsx`, `create-club-form.tsx` | Dashboard: club status, events, live stories, posts; admin banners (club reviews, moderation queue count) |
 | `/organizer/events/new` | `organizer/events/new/event-form.tsx` | New event (poster, dates, repeats, venue pin, tickets) |
-| `/organizer/events/[id]` | `page.tsx`, `edit-event-form.tsx`, `event-pin-form.tsx` | Manage one event |
+| `/organizer/events/[id]` | `page.tsx`, `edit-event-form.tsx`, `event-pin-form.tsx`, `promo-form.tsx` | Manage one event; Promo codes panel for owners and admins |
 | `/organizer/posts/new` | `organizer/posts/new/post-form.tsx` | New club post |
 | `/organizer/stories/new` | `organizer/stories/new/page.tsx`, `story-form.tsx` | New club story: photo to `post-media`, optional event (club's upcoming published events) |
 | `/admin/clubs` | `admin/clubs/page.tsx`, `review-club-form.tsx` | Nikl admin review queue for club pages |
@@ -96,7 +100,7 @@ Key modules:
 - **`src/lib/public-data.ts`**: server-only, cached public reads with the publishable key and **no cookies**, so the result is the same for everyone. `getUpcomingEvents` (`explore_events`), `getWeekendPicks`, `getEventBySlug`, `getClubByHandle`, plus the prerender lists. Each uses `"use cache"`, `cacheLife("minutes")` and `cacheTag(...)` with the tags `events`, `clubs`, `posts`, `event:<slug>` and `club:<handle>`. Time checks happen inside the cached function, so pages don't read the clock while prerendering.
 - **`src/lib/auth.ts`**: `getCurrentUser()` (calls `connection()`, verifies with `auth.getUser()`; call it inside `<Suspense>`), `requireUser(returnTo)` (redirects to `/login?next=…`), `isPlatformAdmin()`.
 - **`src/lib/supabase/server.ts`** (cookie-based client for Server Components and actions) and **`client.ts`** (browser client; `null` when env values are missing).
-- **`src/app/organizer/actions.ts`**: server actions. `createClubAction` → `create_club`; `createEventAction` (Zod `eventFormSchema`) → `create_event`; `updateEventAction`; `setEventStatusAction` (publish / draft / cancel / restore, cascading to dates; publishing sets `published_at`); `setOccurrenceStatusAction`; `deleteDraftAction`; `setEventPinAction` → `set_event_pin`; `createPostAction` → `create_club_post`; `deletePostAction` (also removes the photo files); `createStoryAction` → `create_club_story` (checks the photo path is in the caller's folder first); `deleteStoryAction` (table delete under RLS, then removes the photo). Post and event actions finish with `updateTag("events")` or `updateTag("posts")`, plus `refresh()` where the page stays open. Story actions redirect back to the dashboard (no public web page shows stories).
+- **`src/app/organizer/actions.ts`**: server actions. `createClubAction` → `create_club`; `createEventAction` (Zod `eventFormSchema`) → `create_event`; `updateEventAction`; `setEventStatusAction` (publish / draft / cancel / restore, cascading to dates; publishing sets `published_at`); `setOccurrenceStatusAction`; `deleteDraftAction`; `setEventPinAction` → `set_event_pin`; `createPostAction` → `create_club_post`; `deletePostAction` (also removes the photo files); `createStoryAction` → `create_club_story` (checks the photo path is in the caller's folder first); `deleteStoryAction` (table delete under RLS, then removes the photo); `createPromoAction` (insert into `promo_codes` under RLS; ₹ → paise, end date = 23:59:59 IST) and `setPromoActiveAction` (update `active`). Post and event actions finish with `updateTag("events")` or `updateTag("posts")`, plus `refresh()` where the page stays open. Story actions redirect back to the dashboard (no public web page shows stories).
 - **`src/app/admin/actions.ts`**: `reviewClubAction` → `review_club`, then `updateTag("clubs")` and `updateTag("events")`. `moderateAction` → `moderate_content`, then deletes the returned photo paths from `post-media` and calls `updateTag("posts")`. `resolveReportAction` → `resolve_report`. `setModerationModeAction` → `set_moderation_mode`.
 - **`src/lib/errors.ts`** (`dbErrorMessage`, `fieldErrorsFrom`, `ActionResult`) and **`src/lib/media.ts`** (`postMediaUrl`, `POST_MEDIA_PATH`).
 - **Counts:** follow and like rows are private (P19), so the dashboard and Follow button read `follower_count` and `like_count` instead of counting rows.
@@ -116,11 +120,12 @@ Package age rule: pnpm refuses package versions younger than about two weeks (su
 | Tab bar | `(tabs)/_layout.tsx` → `components/app-tabs.tsx` | Native tabs; `app-tabs.web.tsx` is the web-preview version |
 | Home | `(tabs)/index.tsx` | `home_feed`, `story_feed` (stories row), `suggested_clubs`; "+" sheet (New post, Share your plans); ⋯ menu on posts |
 | Explore | `(tabs)/explore.tsx` | Map/List; reads `?category=` and `?when=` |
-| Tickets | `(tabs)/tickets.tsx` | Placeholder |
+| Tickets | `(tabs)/tickets.tsx` | `my_bookings` via `useFocusData` (`bookings:<user id>`): In progress (countdown, Finish paying, Cancel → `cancel_hold`), Upcoming with codes, Refunds and cancellations, Past |
 | You | `(tabs)/profile.tsx` | Login prompt, profile header with counts (`user_profile`), your posts grid with Under review / Removed, Saved, log out |
 | Log in | `login.tsx` | Modal; sends new users to profile set-up |
 | Profile set-up | `profile-setup.tsx` | `complete_profile`; swipe-back disabled |
-| Event | `event/[slug].tsx` | Dates, venue, Open in Maps, Share, Share to your plans, Save |
+| Event | `event/[slug].tsx` | Dates, venue, Open in Maps, Share, Share to your plans, Save; Book / RSVP (login first) |
+| Book | `book/[slug].tsx` | Date, ± per tier (`tierAvailability`, `stepQuantity`), promo, live quote, `hold_booking`; free → Tickets, paid → `openPayPage`. Shows an existing hold for the event |
 | Club | `club/[handle].tsx` | Stats (`follower_count`), Follow, Posts / Upcoming tabs |
 | Person | `u/[username].tsx` | `user_profile`, Follow, "Follows you", posts grid; ⋯ report / block; blocked state with Unblock |
 | Post | `post/[id].tsx` | One post (from a profile grid): photos, likes (`like_count`), caption, tagged event |
@@ -128,7 +133,7 @@ Package age rule: pnpm refuses package versions younger than about two weeks (su
 | New post | `create/post.tsx` | 1–5 photos, caption, saved event, Public / Friends → `create_user_post` |
 | Share your plans | `create/plan.tsx` | Event (saved, or `?event=<id>`), optional photo and note → `create_user_story` |
 
-`src/app/_layout.tsx` wraps everything in `AuthProvider` and the theme, registers the stack screens (`(tabs)`, `login`, `profile-setup`, `event/[slug]`, `club/[handle]`, `u/[username]`, `post/[id]`, `stories` as a full-screen fade modal without gestures, and `create/post` / `create/plan` sliding up with swipe-back off so drafts aren't lost), and draws `FlashBanner` above the stack.
+`src/app/_layout.tsx` wraps everything in `AuthProvider` and the theme, registers the stack screens (`(tabs)`, `login`, `profile-setup`, `event/[slug]`, `club/[handle]`, `u/[username]`, `post/[id]`, `book/[slug]` sliding up, `stories` as a full-screen fade modal without gestures, and `create/post` / `create/plan` sliding up with swipe-back off so drafts aren't lost), and draws `FlashBanner` above the stack.
 
 Key modules in `src/lib/` and `src/components/`:
 
@@ -142,6 +147,7 @@ Key modules in `src/lib/` and `src/components/`:
 - **`lib/safety.ts`**: `REPORT_REASONS`, `reportContent` → `report_content`, `setBlock` → `set_block`, `deleteMyPost` / `deleteMyStory` (table deletes under RLS; photos are removed only once the row is really gone). A "hidden" store (`useHidden`) makes deleted posts and stories and blocked people vanish from every loaded screen at once.
 - **`lib/media.ts`**: `pickPhotos` (system picker; asks for permission only if the phone needs it), `uploadPhoto` (shrinks to 1,080 px wide, JPEG at 0.8, uploads to `post-media/<user id>/<uuid>.jpg`, returns the path), `removePhotos` (own folder only), `explainPickProblem`.
 - **`lib/flash.ts`**: `showFlash(text)` for a short message over any screen ("Posted …").
+- **`lib/booking.ts`**: `fetchMyBookings`, `quoteBooking`, `holdBooking`, `cancelHold`, `useQuote`, `useNow`, `bookingMessage`. `openPayPage(token)` opens `EXPO_PUBLIC_WEB_URL/pay/<token>?return=<app link to tickets>` with `expo-web-browser`'s `openAuthSessionAsync`; without that variable, `paymentsConfigured` is false and paid bookings say so (free RSVPs still work).
 - **`lib/explore.ts`** (`useExploreEvents`, `matchesQuery`, `categoryLook`, and the `Nullable` helper, because generated RPC types mark every column non-null), **`lib/event-detail.ts`**, **`lib/club.ts`**, **`lib/profile.ts`** (a profile counts as set up once it has a username).
 - **`components/events-map*.tsx`**: `events-map.tsx` checks for Mapbox's native module (`NativeModules.RNMBXModule`) and only then `require`s `events-map-native.tsx` (`@rnmapbox/maps`). In Expo Go it exports `null`, and Explore falls back to the list. `events-map.web.tsx` is always `null`; `events-map-types.ts` holds the shared props.
 - **Components:** `feed.tsx` (StoriesRow with 74 px circles and the "Your plans" bubble, PostCard for clubs and people, PhotoCarousel, ReviewPill, SuggestedClubs, CaughtUp, `openClub` / `openPerson` / `openEvent` / `openStories`), `story-card.tsx` (StoryCard drawn from data, P9; `storySticker`, `storyAction`), `composer.tsx` (ComposerGate: login and username needed; ComposerFrame: asks before throwing away a draft, Android back too; EventChoice, Segmented), `people.tsx` (ProfileHeader, PersonPostGrid), `safety.tsx` (ContentMenu / `useContentMenu`: the ⋯ sheet), `sheet.tsx` (bottom sheet), `flash.tsx` (FlashBanner), `social.tsx` (IconButton, ClubAvatar, PersonAvatar, `StoryRing` = `'unseen' | 'seen'`, FollowButton, SmallButton, VerifiedTick), `event-card.tsx`, `chip.tsx`, `ui.tsx` (Screen, T, Button, EmptyState, Wordmark). `src/theme.ts` gives `useNiklTheme()` from the tokens.
@@ -151,14 +157,15 @@ Key modules in `src/lib/` and `src/components/`:
 | Package | What's in it |
 |---|---|
 | `@nikl/tokens` | Light and dark palettes, fonts, font sizes, spacing, radius, `touchTarget` (44) |
-| `@nikl/utils` | `money.ts` (`formatPaise`, `priceSummary`, `BOOKING_FEE_BPS` = 4%, `cartTotals`), `phone.ts` (`normalizeIndianPhone`, `formatIndianPhone`), `dates.ts` (`formatEventDay/Time/When` in IST, `formatTimeAgo`), `categories.ts` (`CATEGORIES`, `BBSR_AREAS`, map centres), `windows.ts` (`TIME_FILTERS`, `inTimeWindow`), `geo.ts` (`stackBySpot`, `stackOffsetPx`), `stories.ts` (`groupInOrder`, `nextStory`, `previousStory`, `firstUnseen`, `shrinkWidth`), `slugify`. Tests: `utils.test.ts` |
+| `@nikl/utils` | `money.ts` (`formatPaise`, `priceSummary`, `BOOKING_FEE_BPS` = 4%, `cartTotals`), `phone.ts` (`normalizeIndianPhone`, `formatIndianPhone`), `dates.ts` (`formatEventDay/Time/When` in IST, `formatTimeAgo`), `categories.ts` (`CATEGORIES`, `BBSR_AREAS`, map centres), `windows.ts` (`TIME_FILTERS`, `inTimeWindow`), `geo.ts` (`stackBySpot`, `stackOffsetPx`), `stories.ts` (`groupInOrder`, `nextStory`, `previousStory`, `firstUnseen`, `shrinkWidth`), `booking.ts` (`MAX_TICKETS_PER_BOOKING`, `MAX_PER_TIER`, `tierAvailability`, `stepQuantity`, `formatCountdown`, `bookingSection`), `slugify`. Tests: `utils.test.ts`, `booking.test.ts` |
 | `@nikl/validation` | Zod: `phoneSchema`, `otpSchema`, `usernameSchema`, `profileSetupSchema`, `clubFormSchema`, `eventFormSchema`, `ticketTierSchema`. Tests: `validation.test.ts` |
 | `@nikl/supabase` | `createNiklClient`, `isConfigured`, `sendPhoneOtp` / `verifyPhoneOtp`, `friendlyAuthError`, and `database.types.ts` (generated: never edit by hand) |
 
 ### `supabase`
 
 - `config.toml`: local settings (phone sign-up on, test OTP numbers, analytics off).
-- `migrations/`: applied in filename order (8 files).
+- `config.toml` also sets `[functions.payments] verify_jwt = false` (the pay token and Razorpay signatures prove requests instead).
+- `migrations/`: applied in filename order (9 files).
 
 | Migration | What it adds |
 |---|---|
@@ -170,9 +177,10 @@ Key modules in `src/lib/` and `src/components/`:
 | `20261121050000_explore_and_venue_locations.sql` | `venues.lat/lng`, `create_event` v2 (map pin), `explore_events`, `set_event_pin` |
 | `20261127000000_social_feed.sql` | `post-media` bucket, `set_follow_club`, `set_like`, `set_save`, `create_club_post`, `home_feed` v1, `suggested_clubs` |
 | `20261127010000_stories_user_posts_moderation.sql` | `app_settings` and the review switch; private follow and like lists with count functions; following and blocking people; `user_profile`; people's posts; club and "Your plans" stories; the automatic event story trigger; `story_feed`; `home_feed` v2; reports and the admin moderation functions; admin storage rules on `post-media` |
+| `20261128000000_bookings.sql` | `promo_codes`; booking columns (`subtotal_paise`, `discount_paise`, `promo_code_id`, `pay_token`, `confirmed_at`), `tickets.admits`, `payment_events`; pricing, hold, confirm, expiry and payment functions; `my_bookings`; the `nikl-expire-holds` pg_cron job |
 
-- `tests/`: pgTAP, 90 tests (`club_approval_test.sql` 19, `explore_test.sql` 12, `profile_setup_test.sql` 8, `social_test.sql` 16, `stories_moderation_test.sql` 35).
-- `functions/extract-event/index.ts`: poster reading (Deno Edge Function).
+- `tests/`: pgTAP, 121 tests (`club_approval_test.sql` 19, `explore_test.sql` 12, `profile_setup_test.sql` 8, `social_test.sql` 16, `stories_moderation_test.sql` 40, `bookings_test.sql` 26).
+- `functions/extract-event/index.ts`: poster reading; `functions/payments/index.ts`: payments (both Deno Edge Functions).
 - `seed.sql`: fictional Bhubaneswar clubs, venues, events, tiers, posts and stories with fixed IDs. On every reset the sample week moves to the coming Saturday (IST), and the sample stories, plus the automatic ones the trigger makes for sample events, last 14 days.
 
 ## 3. How data flows
@@ -184,11 +192,12 @@ Website  ──┘                                   └─ Storage: posters, po
   ├─ cached public reads: publishable key, no cookies (lib/public-data.ts)
   └─ server actions: user's cookies → RPC / table update → updateTag(...)
 Edge Function extract-event: service role (inside Supabase only) → Claude
+Edge Function payments: pay token or Razorpay signature → service role → payment functions → Razorpay
 ```
 
 1. **Row-level security (RLS) on every table.** The apps only ever hold the publishable key. Policies decide which rows a request can see or change; column grants decide which columns. The service-role key exists only inside Edge Functions, where Supabase provides it.
 2. **Rules live in database functions.** Creating clubs, events, posts and stories, approvals and moderation, profile set-up, follow, like, save, block and report all go through functions in `supabase/migrations`, called with `supabase.rpc(...)`. Simple edits (event details, status, single dates, deleting your own posts and stories) are plain table updates or deletes guarded by RLS.
-3. **Money and seats are server-only** (S5). Apps can't write bookings, payments, refunds, payouts, tickets, the waitlist or the audit log. Seat counters and trust fields (`verified`, `kyc_status`, ratings, `moderation_status`, `moderation_note`) are left out of the column grants; on `posts`, authors may update only `caption` and `visibility`, and stories have no update policy at all.
+3. **Money and seats are server-only** (S5). Bookings are made only by `hold_booking`; payments are recorded only by the `payments` Edge Function. Apps can't write bookings, payments, refunds, payouts, tickets, the waitlist or the audit log. Seat counters and trust fields (`verified`, `kyc_status`, ratings, `moderation_status`, `moderation_note`) are left out of the column grants; on `posts`, authors may update only `caption` and `visibility`, and stories have no update policy at all.
 4. **Visibility follows club approval** (P15). `club_is_live()` and `event_visible()` hide a pending club's events, posts and stories from everyone except its team and Nikl admins. Drafts are visible only to the team.
 5. **Private data sits in its own tables** (S4): `profiles_private` (phone, birth year; owner-only) and `club_payout_settings` (admin-only). `profiles` is public.
 6. **People's content follows people rules** (P19–P23). The "visible posts" and "visible stories" policies check the moderation status, blocks (`blocked_with_me`), friends (`is_my_friend`, for friends-only posts) and followers (`i_follow`, for people's stories). These viewer-only helpers answer only about the signed-in person; the general `is_follower` / `are_friends` / `is_blocked_between` can't be called by apps. Posts, stories, reports and follows are created only through definer functions (no insert policies for apps, except follows, whose insert policy re-checks blocks and approved clubs); approved posts can't be edited. Follow and like rows are visible only to the people involved; everyone else gets counts from definer functions.
@@ -248,6 +257,22 @@ Edge Function extract-event: service role (inside Supabase only) → Claude
 | `moderate_content(target_type, target_id, decision, note)` | definer | authenticated | Nikl admins only. `approved` or `rejected` (a note is required to reject). Sets status and `moderation_note`, closes open reports (`actioned` or `dismissed`), writes `audit_log`, notifies the person or the club's owners and admins when the status changes, and returns the photo paths of removed content so the caller deletes the files. |
 | `resolve_report(report_id, status, note)` | definer | authenticated | Nikl admins only. Marks an open report `actioned` or `dismissed`; writes `audit_log`. |
 | `set_moderation_mode(mode)` | definer | authenticated | Nikl admins only. `review` or `publish`; updates `app_settings` and writes `audit_log`. |
+| `booking_fee_paise(amount)` | invoker | default | 4% of the amount after discounts, rounded to the nearest rupee; 0 for 0 or less. Mirrors `bookingFeePaise` in `packages/utils` (S1, P26). |
+| `price_selection(occurrence, items, promo, user)` | definer | nobody | Validates and prices a selection (`[{tier_id, qty}]`): published, visible event of a live club; scheduled date not over; age limit; 1 to 10 per tier, each tier once, up to 10 tickets; sale window, tier quantity and date capacity; promo active, in its dates, for this club and event, not used up (counting others' live holds), once per person. Returns subtotal, discount, fee, total, seats, tickets, promo ID. |
+| `quote_booking(occurrence, items, promo)` | definer | anon, authenticated | The live price for the booking screens; holds nothing. |
+| `ticket_code()` | invoker | nobody | `NKL-` + 6 characters from a 32-letter alphabet (no 0/O, 1/I), from `gen_random_bytes`; retries on a clash. |
+| `confirm_booking(booking)` | definer | nobody | Sets `confirmed` and `confirmed_at`, clears the hold, issues one ticket per ticket bought (`admits` = the tier's `seats_per_ticket`), bumps the promo's `used`. Repeats do nothing. |
+| `release_booking(booking, status)` | definer | nobody | Gives back `sold` and `seats_taken` of an unpaid booking (`held`, `payment_pending`, `failed`) and sets the status. |
+| `hold_booking(occurrence, items, promo, idempotency_key)` | definer | authenticated | P24. Needs a username and a birth year (18+). A known key returns the same booking (not someone else's, not an expired one). Locks the date, then its tiers; releases expired holds on that date and the caller's own unpaid hold; prices with `price_selection`; inserts the booking and items and takes the seats. Paid: `held` for 10 minutes with a 36-hex `pay_token`. Free: confirmed at once, no token. |
+| `cancel_hold(booking)` | definer | authenticated | Your own unpaid booking only; releases it as `expired`. |
+| `expire_holds()` | definer | nobody | Releases unpaid holds past `hold_expires_at` (skips locked rows). Run every minute by the pg_cron job `nikl-expire-holds` (T31). |
+| `booking_for_payment(token)` | definer | anon, authenticated | The pay page's booking by token: event, items, prices, hold time and a ticket **count** (never codes). |
+| `start_payment(token, provider, order_id)` | definer | service_role only | Records the provider order (`payments`, `created`) and sets `payment_pending`; the first time, extends the hold to 10 minutes from now but never past 20 minutes from creation. Refuses expired holds. |
+| `open_order_for(token)` | definer | service_role only | The booking's latest `created` or `failed` order, so a retry reuses it. |
+| `payment_captured(order, payment, method, amount, raw)` | definer | service_role only | Amount must match. Idempotent (an already captured payment returns the booking status). Unpaid hold: `paid`, then confirmed. Expired: re-takes the seats if they fit (`late_paid`, confirmed), else `late_paid` plus a full `pending` refund (P27). |
+| `payment_failed(order, payment, raw)` | definer | service_role only | Marks the payment `failed` and a `payment_pending` booking `failed`; the hold stays until it runs out. |
+| `claim_payment_event(event_id, type)` | definer | service_role only | Inserts into `payment_events`; false if the webhook was seen before. |
+| `my_bookings()` | definer | authenticated | The caller's bookings with event, club, venue, items and tickets (codes, admits, status); live unpaid holds with their `pay_token`; expired holds left out. Soonest first. |
 
 Triggers:
 
@@ -271,6 +296,13 @@ Triggers:
 
 The schema v1 policies for inserting pending posts and stories, deleting your own (or your club's) posts and stories, filing reports and blocking still apply.
 
+### Policies added in week 6
+
+| Table | Policy | Who |
+|---|---|---|
+| `promo_codes` | "club admins see / add / change their promo codes" | Owners and admins of that club; inserts need `used = 0`; updates only `active`, `max_uses`, `valid_until` (column grant) |
+| `payment_events` | none (RLS on) | Server only |
+
 ### Storage buckets
 
 | Bucket | Reading | Limits | Who can write | How it is stored |
@@ -291,14 +323,24 @@ Reads a poster and returns event fields for the new-event form (on hold, T23).
 - Errors return HTTP 200 with `{ error, message }` so the form can show the message (401 for no login).
 - The web button is hidden unless `NEXT_PUBLIC_POSTER_AI_ENABLED=true`. The category and area lists are copied in the function: keep them in sync with `packages/utils`.
 
+### Edge Function `payments`
+
+All money steps (T30). Runs with `verify_jwt = false`: the pay token (`^[0-9a-f]{36}$`) and Razorpay's signatures prove requests.
+
+- `POST { action: "start", token }`: reuses the open order or creates one (Razorpay `/v1/orders`, or `order_mock_…`), then `start_payment`. Returns `{ mode, orderId, keyId?, amount, currency, title }`, or `{ status: "confirmed" }` if already paid.
+- `POST { action: "verify", token, razorpay_order_id, razorpay_payment_id, razorpay_signature }`: Razorpay mode only. Uses the order from `open_order_for`, never the browser's; HMAC-SHA256 of `order|payment` with the key secret, compared in constant time; then `payment_captured`.
+- `POST { action: "mock_pay", token, outcome }`: mock mode only; `success` → `payment_captured`, `failure` → `payment_failed`.
+- **Webhooks** (header `X-Razorpay-Signature`): HMAC of the raw body with `RAZORPAY_WEBHOOK_SECRET`, de-duplicated by `X-Razorpay-Event-Id` through `claim_payment_event`. `payment.captured` / `order.paid` → `payment_captured`; `payment.failed` → `payment_failed`. Only a small summary goes in `raw_webhook`, never card or bank details. Unknown orders and wrong amounts are acknowledged and logged as "PAYMENT NEEDS A LOOK".
+- `PAYMENTS_MODE`: `mock` or `razorpay`; anything else or unset = off ("Payments aren't switched on yet"). Friendly database errors (`22023`) go to the payer; others are logged and answered vaguely (HTTP 500).
+
 ### Tables at a glance
 
-33 tables in `public`. Several exist ahead of their features (bookings, tickets, `post_tags`, badges). `notifications` gets moderation messages but has no screen yet (week 8).
+35 tables in `public`. Several exist ahead of their features (`payouts`, `waitlist`, `post_tags`, badges; `refunds` only gets queued rows). `notifications` gets moderation messages but has no screen yet (week 8).
 
 - **People:** `profiles` (public), `profiles_private` (owner-only), `platform_admins`.
 - **Clubs and places:** `clubs`, `club_members` (`owner` / `admin` / `checkin`), `club_payout_settings`, `venues` (PostGIS `location`, plus generated `lat` / `lng`).
 - **Events:** `events` (the series; `published_at` is set on publish), `event_occurrences` (one row per date), `ticket_tiers` (per date).
-- **Money, server-only:** `bookings`, `booking_items`, `payments`, `refunds`, `payouts`, `tickets`, `waitlist`.
+- **Money, server-only:** `bookings` (status, prices in paise, `promo_code_id`, `hold_expires_at`, unique `idempotency_key` and `pay_token`, `confirmed_at`), `booking_items`, `payments` (unique `provider_order_id`), `refunds`, `payouts`, `tickets` (`code`, `admits`), `waitlist`, `payment_events` (webhook IDs). Plus `promo_codes` (club admins, under RLS).
 - **Social:** `follows` (clubs and people), `posts` (`author_type` club or user; `visibility` public or friends; `moderation_status`; `moderation_note`, up to 300 characters, the reason shown to the author), `post_media`, `post_tags`, `likes`, `saves`, `stories` (`kind` `event_auto` / `custom` / `your_plan`; `template` jsonb with `kicker` and `note`; `expires_at` 24 hours; `moderation_note`), `story_views`, `notifications`.
 - **Safety, passport, system:** `reports` (unique index `reports_one_open_per_target` on reporter, target type and target ID while `status = 'open'`), `blocks`, `badges`, `user_badges`, `audit_log`, `poster_ai_usage`, `app_settings` (key/value jsonb; `moderation_mode` = `"review"` or `"publish"`; Nikl admins read it).
 
@@ -306,7 +348,10 @@ Reads a poster and returns event fields for the new-event form (on hold, T23).
 
 | Rule | In practice | Decision |
 |---|---|---|
-| Money is integer paise | `19900` = ₹199. Never floats. Format with `formatPaise` / `priceSummary`. | S1 |
+| Money is integer paise | `19900` = ₹199. Never floats. Format with `formatPaise` / `priceSummary`. The booking fee is 4% of the amount after discounts, rounded to the nearest rupee: `bookingFeePaise` in utils and `booking_fee_paise` in SQL must match. Prices in the apps are previews; `quote_booking` / `hold_booking` decide. | S1, P26 |
+| Seats are held, then released | Only `hold_booking` takes seats (10 minutes, row locks, idempotency key; one fresh 10 minutes when paying starts, 20 at most). `expire_holds` (pg_cron, every minute) and each new hold on the date give unpaid seats back. Never change `sold` / `seats_taken` anywhere else. | P24, T31 |
+| Payments only through the `payments` function | Apps never call the payment functions (service_role only) or Razorpay's API; the pay page calls the function, which calls the database. The result comes from `payment_captured`, safe to repeat. | P25, T30 |
+| Mock payments never on a real server | `PAYMENTS_MODE=mock` gives free tickets. Use it only in `supabase/functions/.env` on your computer; hosted projects set `razorpay` (test keys, then live) or leave it unset (off). | T30 |
 | Times stored in UTC, shown in IST | `timestamptz` columns; `formatEvent*` and `inTimeWindow` work in `Asia/Kolkata`; forms send times with `+05:30`. | S2 |
 | Phones are `+91` E.164 | `normalizeIndianPhone`; the signup trigger adds the `+`; a check rejects other formats. The phone lives only in `profiles_private`; organizers never see it. | S3, S4, S8 |
 | One categories list | `CATEGORIES` in `packages/utils`, `is_valid_category()` in the database and the copy in `extract-event` must match. Change all three together (the database part through a new migration). | D7, PLAN.md §5 |
@@ -370,13 +415,23 @@ Reads a poster and returns event fields for the new-event form (on hold, T23).
 | What | Tool | Where | Run |
 |---|---|---|---|
 | Unit tests | Vitest | `packages/utils`, `packages/validation` | `pnpm test` |
-| Database rules | pgTAP | `supabase/tests` (90 tests) | `pnpm db:test` (database running) |
+| Database rules | pgTAP | `supabase/tests` (121 tests) | `pnpm db:test` (database running) |
 | Types and lint | tsc, ESLint | every workspace | `pnpm typecheck`, `pnpm lint` |
 | Web build | `next build` | `apps/web` | `pnpm build` |
 | App health | Expo Doctor, Android bundle | `apps/mobile` | `npx expo-doctor`, `npx expo export --platform android` |
 | By hand | Browser; phone via Expo Go or the development build | | `pnpm dev:web`, `pnpm dev:mobile(:go)` |
 
 There are no end-to-end tests yet (Maestro and Playwright are planned in DEV_PLAN §8).
+
+### Testing payments locally
+
+1. Put `PAYMENTS_MODE=mock` in `supabase/functions/.env` (git-ignored).
+2. With the database up, run `pnpm exec supabase functions serve --env-file supabase/functions/.env` and `pnpm dev:web`.
+3. Book a paid event. The pay page shows "Test mode" with **Pretend it worked** / **Pretend it failed**. Check `/tickets` for the codes.
+4. App: set `EXPO_PUBLIC_WEB_URL` in `apps/mobile/.env` to `http://<PC's LAN IP>:3000` so the phone can open the pay page.
+5. Expiry without waiting: set a booking's `hold_expires_at` in the past in Studio, then `select public.expire_holds();`.
+
+Razorpay test mode needs the founder's test keys ([NEXT_STEPS.md](../NEXT_STEPS.md) 2.4): `PAYMENTS_MODE=razorpay` plus the three `RAZORPAY_*` values.
 
 **CI** ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs on every pull request and every push to `main`:
 

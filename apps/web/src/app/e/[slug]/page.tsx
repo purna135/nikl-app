@@ -125,11 +125,11 @@ async function EventContent({ params }: Props) {
         <div className="book-bar">
           {hasDates && (
             <>
-              <button type="button" className="btn primary" disabled>
-                {isFree ? "RSVP opens soon" : "Booking opens soon"}
-              </button>
+              <Link href={`/e/${ev.slug}/book`} className="btn primary">
+                {isFree ? "RSVP" : "Book"}
+              </Link>
               <p className="hint" style={{ margin: 0, textAlign: "center" }}>
-                Booking with UPI is coming in the next update.
+                {isFree ? "Free. Save your spot in a tap." : "Pay with UPI, cards or netbanking. Your seats are held for 10 minutes while you pay."}
               </p>
             </>
           )}

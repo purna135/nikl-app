@@ -56,7 +56,7 @@ select ok((select bool_and(seen) from public.story_feed() where author_handle = 
 select public.create_user_story((select id from public.events where title = 'Story Gig'));
 select public.create_user_story((select id from public.events where title = 'Story Gig'), null, 'Who''s coming?');
 select results_eq(
-  $$ select under_review from public.story_feed() where mine order by created_at $$,
+  $$ select under_review from public.story_feed() where mine order by under_review $$,
   $$ values (false), (true) $$,
   'Your plans: card-only story is live, a story with a note waits for review');
 

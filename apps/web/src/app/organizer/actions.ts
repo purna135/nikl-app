@@ -243,6 +243,57 @@ export async function deleteStoryAction(fd: FormData): Promise<void> {
   back();
 }
 
+/** Promo code for a club, optionally for one event: percent or rupees off, an optional use limit and end date. */
+export async function createPromoAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const clubId = text(fd, "clubId");
+  const eventId = text(fd, "eventId");
+  const code = (text(fd, "code") ?? "").toUpperCase();
+  const kind = text(fd, "kind");
+  const value = num(fd, "value");
+  const maxUses = int(fd, "maxUses");
+  const validUntil = text(fd, "validUntil");
+  if (!clubId || !eventId) return { ok: false, message: "Missing event." };
+  const fieldErrors: Record<string, string> = {};
+  if (!/^[A-Z0-9]{3,20}$/.test(code)) fieldErrors.code = "Use 3–20 letters or numbers, no spaces.";
+  if (kind !== "percent" && kind !== "amount") fieldErrors.kind = "Choose % or ₹ off.";
+  if (value === undefined || value <= 0 || (kind === "percent" && (value > 100 || !Number.isInteger(value)))) {
+    fieldErrors.value = kind === "percent" ? "Enter a whole number from 1 to 100." : "Enter an amount in rupees.";
+  }
+  if (maxUses !== undefined && (!Number.isInteger(maxUses) || maxUses < 1)) fieldErrors.maxUses = "Leave empty, or enter 1 or more.";
+  if (Object.keys(fieldErrors).length > 0) return { ok: false, message: "Check the highlighted fields.", fieldErrors };
+
+  const { supabase, user } = await signedIn();
+  if (!user) return { ok: false, message: "Your session expired. Log in again." };
+  const { error } = await supabase.from("promo_codes").insert({
+    club_id: clubId,
+    event_id: fd.get("allEvents") === "on" ? null : eventId,
+    code,
+    percent_off: kind === "percent" ? value! : null,
+    amount_off_paise: kind === "amount" ? Math.round(value! * 100) : null,
+    max_uses: maxUses ?? null,
+    // End of that day in India time.
+    valid_until: validUntil ? `${validUntil}T23:59:59+05:30` : null,
+  });
+  if (error) {
+    if (error.code === "23505") return { ok: false, message: "Check the highlighted fields.", fieldErrors: { code: "Your club already has that code." } };
+    return { ok: false, message: dbErrorMessage(error) };
+  }
+  refresh();
+  return { ok: true, message: `${code} is live.` };
+}
+
+/** Switch a promo code off (or back on). */
+export async function setPromoActiveAction(fd: FormData): Promise<void> {
+  const id = text(fd, "promoId");
+  const eventId = text(fd, "eventId");
+  if (!id) return;
+  const { supabase, user } = await signedIn();
+  if (!user) redirect("/login?next=/organizer");
+  const { data, error } = await supabase.from("promo_codes").update({ active: fd.get("active") === "true" }).eq("id", id).select("id");
+  if ((error || !data?.length) && eventId) backWithError(eventId, error ? dbErrorMessage(error) : "You can't change that code.");
+  refresh();
+}
+
 /** Add, move or remove an event's map pin (the database gives the event its own venue copy). */
 export async function setEventPinAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const id = text(fd, "eventId");

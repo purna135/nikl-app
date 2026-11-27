@@ -71,6 +71,12 @@ export function AccountView() {
         <dt>User ID</dt>
         <dd>{view.id}</dd>
       </dl>
+      <Link className="btn primary block" href="/tickets">
+        Your tickets
+      </Link>
+      <Link className="btn block" href="/account/setup">
+        Edit your profile
+      </Link>
       <Link className="btn dark block" href="/organizer">
         Organizer dashboard
       </Link>

@@ -1,12 +1,12 @@
 # Nikl: what works today
 
 > A plain-English tour of every feature that exists right now: what it does, where to find it and who can use it.
-> Checked against the code at the end of **week 5 (27 Nov 2026)**. For developers: [DEVELOPING.md](DEVELOPING.md).
+> Checked against the code at the end of **week 6 (28 Nov 2026)**. For developers: [DEVELOPING.md](DEVELOPING.md).
 > This guide is updated with every chunk of work, before it is committed (see DEVELOPING.md, "Team routine").
 
 ## What Nikl is
 
-Nikl is "Instagram for events, activities and clubs" in Bhubaneswar. It is for people aged 18 to 30 who want to find what's on in the city: runs, gigs, workshops, treks, markets, open mics and more. You can see events on a map, follow clubs and people, watch 24-hour stories, post photos from your plans, like and save posts, and soon book a spot and pay with UPI. Clubs and organizers get a free page and a dashboard to add events, post updates and share stories. There is a phone app (Android first) and a website. The website is for links people share on WhatsApp, for people without the app, and for organizers who prefer a laptop.
+Nikl is "Instagram for events, activities and clubs" in Bhubaneswar. It is for people aged 18 to 30 who want to find what's on in the city: runs, gigs, workshops, treks, markets, open mics and more. You can see events on a map, follow clubs and people, watch 24-hour stories, post photos from your plans, like and save posts, and book a spot: a one-tap RSVP for free events, or a paid ticket paid with UPI (test payments only, for now). Clubs and organizers get a free page and a dashboard to add events, post updates and share stories. There is a phone app (Android first) and a website. The website is for links people share on WhatsApp, for people without the app, and for organizers who prefer a laptop.
 
 ## Who can do what
 
@@ -32,10 +32,10 @@ Four tabs along the bottom:
 |---|---|
 | **Home** | Stories (with **Your plans** first), the feed of club posts and posts from people you follow, "Clubs you might like". A **+** button at the top makes a post or shares your plans. |
 | **Explore** | Everything on in the next 60 days, on a map or as a list, with filters and search. |
-| **Tickets** | Empty for now ("No tickets yet"). Booking and tickets come in weeks 6 and 7. |
+| **Tickets** | Your bookings: **In progress** (unpaid, with a countdown), **Upcoming** with entry codes, refunds, and **Past**. |
 | **You** | Log in, your profile with your counts, your posts, your Saved events, log out. |
 
-Other screens open on top of the tabs: **Log in**, **Set up your profile**, an **event** screen, a **club** profile, a **person's** profile, a single **post**, the full-screen **story viewer**, and the two composers, **New post** and **Share your plans**.
+Other screens open on top of the tabs: **Log in**, **Set up your profile**, an **event** screen, **Book** (pick tickets), a **club** profile, a **person's** profile, a single **post**, the full-screen **story viewer**, and the two composers, **New post** and **Share your plans**.
 
 While the app is being built, there are two ways to run it on a phone:
 
@@ -49,9 +49,13 @@ While the app is being built, there are two ways to run it on a phone:
 | `/` | Home: "This weekend" picks (or "Coming up" when the weekend is empty) and the 12 categories. | Anyone |
 | `/explore` | A map (the default) or grid of upcoming events, with filters and search. | Anyone |
 | `/e/<event>` | An event page, for example `/e/tuesday-track-intervals`. | Anyone |
+| `/e/<event>/book` | Pick a date and tickets, then RSVP or go on to pay. | Logged in, with a finished profile |
+| `/pay/<link>` | The pay page, for bookings from the website and the app. | Anyone with the link |
+| `/tickets` | Your bookings and entry codes. | Logged in |
 | `/c/<club>` | A club page, for example `/c/patia.pacers`. | Anyone |
 | `/login` | Phone login. | Anyone |
-| `/account` | Your phone number, a link to the organizer dashboard, log out. | Logged in |
+| `/account` | Your phone number, links to your tickets, your profile and the organizer dashboard, log out. | Logged in |
+| `/account/setup` | Set up or edit your profile (needed to book). | Logged in |
 | `/organizer` | Organizer dashboard: create a club page, manage events, stories and posts. | Logged in (tools need club team) |
 | `/organizer/events/new` | New event form. | Club team |
 | `/organizer/events/<id>` | Manage one event. | Club team |
@@ -77,9 +81,9 @@ The website has no social feed, no stories and no posts by people. Those live in
 
 - **What it does:** After your first login, the app asks for your name, a username, the area of Bhubaneswar you usually hang around, at least 3 interests and the year you were born. You must be 18 or older. Your birth year is private. Your interests and area help order your Home feed.
 - **Rules:** Usernames use 3 to 24 letters, numbers, dots or underscores, and must be unique. Interests come from the 12 categories (pick 3 to 12).
-- **Where:** App only. If you leave it half done, the You tab shows "Finish setting up". Posting and sharing your plans need a finished profile.
+- **Where:** Both. In the app it opens after your first login; if you leave it half done, the You tab shows "Finish setting up". On the website it's `/account/setup` (see 27). Posting, sharing your plans and booking need a finished profile.
 - **Who:** Logged in.
-- **Today:** Built, not yet tested on a phone. The website does not ask for a profile yet.
+- **Today:** App: built, not yet tested on a phone. Website: tried in the browser.
 - **Coming later:** Adding a profile photo and a bio (there is no screen for them yet). City Passport badges (week 9).
 
 ### 3. Browsing without logging in
@@ -111,12 +115,12 @@ The website has no social feed, no stories and no posts by people. Those live in
 - **Share to your plans** (app): turns the event into a 24-hour "Your plans" story for your followers (see 8). Shown while the event has an upcoming date.
 - **Previews:** When a website event link is shared on WhatsApp or found on Google, it shows the title, date, venue, club and poster.
 - **Save:** Bookmarks the event (see Saved).
-- **Booking:** Not live yet. The button says "Booking opens soon" (or "RSVP opens soon" for free events) and can't be pressed.
+- **Booking:** **Book** (or **RSVP** when every ticket is free) opens the booking page (see 23). In the app, an event with no ticket types at all says "Free entry. No booking needed, just turn up."
 - **Special cases:** A cancelled event says so. An event with no dates left says "No upcoming dates right now".
 - **Where:** Both. Website: `/e/<event>`. App: tap any event, post, story button or map card.
 - **Who:** Anyone. Save and Share to your plans need a login.
 - **Today:** Website: tried in the browser. App: built, not yet tested on a phone.
-- **Coming later:** Booking with UPI (week 6), tickets with QR codes (week 7). "Who's going" and "Add to calendar" are planned for launch.
+- **Coming later:** QR codes on tickets (week 7). "Who's going" and "Add to calendar" are planned for launch.
 
 ### 6. Club pages and club profiles
 
@@ -134,7 +138,7 @@ The website has no social feed, no stories and no posts by people. Those live in
 - **Post cards**, like Instagram, from clubs and from people you follow:
   - A header with the avatar (with a story ring when they have a live story), the handle, a verified tick for clubs, a **Follow** link if you don't follow them yet, and **⋯** (report, block, or delete your own; see 14).
   - Club posts: the post's photo, or the event's poster, or a coloured tile with the event's name. People's posts: their photos, swipe for up to 5.
-  - An **event strip** with the date, time, area and price, and a **Book** or **RSVP** button. It opens the event page (booking itself isn't live yet). It shows while the event still has an upcoming date.
+  - An **event strip** with the date, time, area and price, and a **Book** or **RSVP** button. It opens the event page, where you can book. It shows while the event still has an upcoming date.
   - **Like**, **comment**, **share** and **save** buttons. The comment button opens the event for now; comments come after launch.
   - The number of likes ("Be the first to like this" when there are none), the caption (long ones fold, with "more"), and how long ago it was posted.
   - Your own posts that Nikl hasn't checked yet say **Under review** and "Only you can see this for now".
@@ -170,7 +174,7 @@ The website has no social feed, no stories and no posts by people. Those live in
 - **Who:** Logged in, with a finished profile.
 - **Good to know:** Photos are made smaller (1,080 pixels wide) before uploading, to save data. Up to 10 posts a day. Only events you saved can be tagged (decision P21). A post stays after its event is over; the Book button then disappears. If posting fails, the uploaded photos are removed again. Closing the composer with something added asks before throwing the draft away.
 - **Today:** Built, not yet tested on a phone.
-- **Coming later:** Tagging events you booked (week 6). Tagging friends and a "Join me" button (not scheduled yet).
+- **Coming later:** Tagging events you booked (not scheduled yet; today only saved events). Tagging friends and a "Join me" button (not scheduled yet).
 
 ### 10. People's profiles and following people (app)
 
@@ -245,11 +249,13 @@ The website has no social feed, no stories and no posts by people. Those live in
   - Publish, move back to draft, cancel the event, or restore a cancelled one. Delete a draft.
   - Add, move or remove the map pin. Moving a pin never moves other events at the same venue.
   - See every date with how many are going and ticket sales. Cancel or restore a single future date.
+  - **Promo codes** (see 26).
   - A link to the public page.
 - **Good to know:** Changes show on the public website straight away.
 - **Who:** Club team. Check-in staff can see events but not change them.
 - **Today:** Tried in the browser.
-- **Coming later:** Changing times and prices of existing dates (with bookings, week 6). Attendee list, check-in and payouts (week 7). Venue search with Google (needs a Google key). Organizer tools inside the app.
+- **Not yet:** Changing the time or prices of a date that already has bookings (for now, cancel the date and add a new event).
+- **Coming later:** Attendee list, check-in and payouts (week 7). Venue search with Google (needs a Google key). Organizer tools inside the app.
 
 ### 17. Organizer dashboard: posts
 
@@ -301,9 +307,55 @@ The website has no social feed, no stories and no posts by people. Those live in
 
 Local copies of Nikl come with fictional Bhubaneswar clubs (Patia Pacers, Clay & Chai Studio, Old Town Mic and others), venues with map pins, events with free and paid tickets, club posts and automatic club stories. There are no sample people or people's posts: log in to make your own. Every time the local database is rebuilt, the sample events move to the coming week so they are always upcoming, and the sample stories stay up for two weeks.
 
+### 23. Booking and RSVP
+
+- **What it does:** Pick a date, then how many of each ticket type (tap − and +), and add a promo code if you have one. The price updates as you go: tickets, discount, the 4% booking fee and the total. Then:
+  - **Free** (the total is ₹0): **RSVP** confirms straight away and your ticket appears in Tickets.
+  - **Paid:** your seats are held for **10 minutes** while you pay (see 24). Unpaid holds give their seats back automatically.
+- **Rules** (decision P24): up to 10 tickets per booking and 10 of one ticket type. Picking again replaces your own unpaid hold for that date. Sold-out ticket types and ones not on sale yet (or any more) can't be picked. Pressing twice or retrying never makes two bookings.
+- **Age:** booking needs a finished profile with your birth year, and you must be 18 or older. Events with an age limit (for example 21+) check it.
+- **Women-only events** show a note ("The club may check at the entry"), but Nikl doesn't check it: Nikl doesn't ask for gender (an open question in [DECISIONS.md](../DECISIONS.md#open-questions)).
+- **Where:** Both. Website: **Book** or **RSVP** on the event page opens `/e/<event>/book`; without a finished profile it sends you to `/account/setup` first. App: the same button on the event screen opens the Book screen. If you already have seats on hold for that event, it says so and offers to finish paying.
+- **Who:** Logged in, 18+, with a finished profile.
+- **Today:** Website: tried in the browser (free RSVP, and a paid booking with pretend payments). App: built, not yet tested on a phone.
+
+### 24. Paying
+
+- **One pay page for both** (decision P25): paid bookings are paid on the website at `/pay/<link>`. The app opens it in an in-app browser, and **Back to Nikl** returns you to Tickets. The link is random and long, like a payment link, so the page needs no login.
+- **What you see:** the event, your tickets, any discount, the booking fee, the total, and how long your seats stay held. **Pay** opens Razorpay's payment window: UPI (GPay, PhonePe, Paytm), cards or netbanking. Nikl never sees your card or UPI PIN.
+- **Time:** starting to pay gives you a fresh 10 minutes once, but a hold never lasts more than 20 minutes in total. If a payment fails, you can try again while the hold lasts. When time runs out the seats go back and you pick again.
+- **Late payments** (decision P27): if money arrives after the hold ran out, you still get the seats if they're free. If the event filled up, the booking shows as paid and a full refund is queued (refunds are paid out from week 7).
+- **Test mode:** on a developer's computer, payments are pretend: the page says "Test mode: no money moves" with **Pretend it worked** and **Pretend it failed** buttons. A server with no payment setting has payments switched off ("Payments aren't switched on yet").
+- **Today:** Pretend payments: tried in the browser. Real Razorpay payments: built, never tried (waiting for the founder's Razorpay test keys, [NEXT_STEPS.md](../NEXT_STEPS.md) 2.4). From the app: built, not yet tested on a phone.
+
+### 25. Tickets
+
+- **What it does:** Lists your bookings in groups:
+  - **In progress** (app) / **Waiting for payment** (website): unpaid holds, with **Finish paying**. The app shows a countdown and a **Cancel** button; the website shows when the hold ends.
+  - **Upcoming:** confirmed bookings, each with its entry codes, like `NKL-7K2QX9`, one per ticket. A group ticket (for example "Squad of 4") has one code that admits several people. Show the code at the entry.
+  - **Refunds and cancellations** (app), for example a late payment being refunded. The website shows a note on the booking instead.
+  - **Past:** events that are over.
+- **Where:** App: the Tickets tab (pull down to refresh). Website: `/tickets`, also linked from your account page. The pay page shows only how many tickets you got, never the codes, because anyone with the link can open it.
+- **Who:** Logged in.
+- **Today:** Website: tried in the browser. App: built, not yet tested on a phone.
+- **Coming later:** QR codes that work offline, and check-in at the door (week 7).
+
+### 26. Promo codes (organizers)
+
+- **What it does** (decision P26): on an event's manage page (`/organizer/events/<id>`), the **Promo codes** panel lists the club's codes for that event or for all events (code, % or ₹ off, how often used, end date) with **Switch off** / **Switch on**. Below it, add a code: 3 to 20 letters or numbers (for example `EARLY10`), % off (1 to 100) or ₹ off, an optional use limit, an optional last day (India time), and "Works for all of the club's events".
+- **How it works for people:** a code works once per person, only while it's switched on and not used up or past its last day. The 4% booking fee is worked out on the price after the discount. There's no screen to edit a code: switch it off and add a new one.
+- **Who:** Club owners and admins. Check-in staff don't see the panel.
+- **Today:** Making codes: tried in the browser. Booking with a code: built and covered by the automatic tests.
+
+### 27. Website profile set-up
+
+- **What it does:** The same profile as the app (name, username, area, 3 to 12 interests, birth year; 18+), on the website at `/account/setup`. The booking page sends you here when your profile isn't finished, then brings you back. Your account page has **Edit your profile**.
+- **Who:** Logged in.
+- **Today:** Tried in the browser.
+
 ## Try it yourself
 
-The step-by-step tour is in [NEXT_STEPS.md](../NEXT_STEPS.md), section **"Try it yourself"**. You need Docker Desktop running and the website (or the app) started on your computer. On a local copy, log in with **98765 43210** or **99999 99999** and the code **123456**. No real text message is sent. To see people's posts and "Your plans" from both sides, log in with one test number on each of two phones (following people is app-only), follow each other, and approve the posts at `/admin/moderation`.
+The step-by-step tour is in [NEXT_STEPS.md](../NEXT_STEPS.md), section **"Try it yourself"**. You need Docker Desktop running and the website (or the app) started on your computer. On a local copy, log in with **98765 43210** or **99999 99999** and the code **123456**. No real text message is sent. To see people's posts and "Your plans" from both sides, log in with one test number on each of two phones (following people is app-only), follow each other, and approve the posts at `/admin/moderation`. To try booking, the pay page needs the `payments` server function running on your computer (see DEVELOPING.md, "Testing payments locally"); pay with **Pretend it worked**.
 
 ## What's not built yet
 
@@ -311,9 +363,8 @@ From the timeline in [DEV_PLAN.md](../DEV_PLAN.md) §7:
 
 | When (planned) | What |
 |---|---|
-| Week 6 | Booking: free RSVP, paid tickets, promo codes, UPI payments. Tagging events you booked in your posts. |
-| Week 7 | Tickets with QR codes that work offline, a check-in scanner for organizers, organizer payouts, refunds. |
-| Week 8 | Notifications and an Activity screen (where approval and removal messages will show), reminders, links that open the app, waitlist. "Today" and "Last few spots" automatic stories. |
+| Week 7 | QR codes on tickets that work offline, a check-in scanner for organizers, refunds, organizer payouts, a waitlist for full events, and an attendee list for organizers. |
+| Week 8 | Notifications and an Activity screen (where approval and removal messages will show), reminders, links that open the app. "Today" and "Last few spots" automatic stories. |
 | Week 9 | Refunds and featured events for Nikl admins. Analytics. Profile page and City Passport basics. |
 | Weeks 10 to 12 | Testing on cheap Android phones, a closed beta, then the Play Store and website launch. |
 | Weeks 13 to 15 | The iPhone app. |
@@ -322,6 +373,8 @@ From the timeline in [DEV_PLAN.md](../DEV_PLAN.md) §7:
 Not on the timeline yet, or waiting on the founder:
 
 - Real text-message login (waits for business registration and MSG91).
+- Real payments through Razorpay (test keys needed now, live keys after business registration and KYC).
+- Checking women-only events at booking (open question), and tagging events you booked in your posts.
 - Nikl's own web address (the domain isn't bought yet), so app shares have no link.
 - Venue search with Google (needs a Google key).
 - Automatic image and text checks, to replace the hand check (needs AWS and Anthropic keys).

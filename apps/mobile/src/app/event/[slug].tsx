@@ -17,7 +17,7 @@ function goBack() {
   else router.replace('/');
 }
 
-/** One event: poster, dates and tickets, venue, save, share. Booking arrives in week 6. */
+/** One event: poster, dates and tickets, venue, save, share, and Book / RSVP. */
 export default function EventScreen() {
   const t = useNiklTheme();
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -93,6 +93,15 @@ function EventBody({ event, now }: { event: EventDetail; now: Date }) {
     if (authLoading) return;
     if (!session) router.push('/login');
     else router.push({ pathname: '/create/plan', params: { event: event.id } });
+  };
+
+  // Free events with free ticket types take an RSVP (a free booking); events without ticket types need nothing.
+  const noTickets = dates.length > 0 && dates.every((d) => d.ticket_tiers.length === 0);
+  const allFree = dates.every((d) => d.ticket_tiers.every((tier) => tier.price_paise === 0));
+  const book = () => {
+    if (authLoading) return;
+    if (!session) router.push('/login');
+    else router.push({ pathname: '/book/[slug]', params: { slug: event.slug } });
   };
 
   const openMaps = () => {
@@ -174,7 +183,15 @@ function EventBody({ event, now }: { event: EventDetail; now: Date }) {
       </ScrollView>
 
       <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: t.app, borderTopColor: t.hair }]}>
-        <Button label="Booking opens soon" onPress={() => {}} disabled />
+        {dates.length === 0 ? (
+          <Button label="No upcoming dates" onPress={() => {}} disabled />
+        ) : noTickets ? (
+          <T variant="muted" style={styles.footerNote}>
+            Free entry. No booking needed, just turn up.
+          </T>
+        ) : (
+          <Button label={allFree ? 'RSVP' : 'Book'} onPress={book} />
+        )}
       </SafeAreaView>
     </>
   );
@@ -227,6 +244,7 @@ const styles = StyleSheet.create({
   dateHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   tierRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   footer: { paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm, borderTopWidth: StyleSheet.hairlineWidth },
+  footerNote: { textAlign: 'center', paddingVertical: space.sm },
   pad: { padding: space.lg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xl },
 });

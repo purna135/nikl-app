@@ -24,6 +24,7 @@ export default function RootLayout() {
             <Stack.Screen name="login" options={{ presentation: 'modal' }} />
             <Stack.Screen name="profile-setup" options={{ gestureEnabled: false }} />
             <Stack.Screen name="event/[slug]" />
+            <Stack.Screen name="book/[slug]" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="club/[handle]" />
             <Stack.Screen name="u/[username]" />
             <Stack.Screen name="post/[id]" />

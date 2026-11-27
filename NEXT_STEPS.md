@@ -19,7 +19,7 @@ Secrets go in your **password manager** and the service's own settings page (Sup
 
 ---
 
-## Try it yourself (weeks 2–5 are done)
+## Try it yourself (weeks 2–6 are done)
 
 1. Make sure **Docker Desktop** is running.
 2. In PowerShell in the project folder, run `pnpm dev:web`.
@@ -29,14 +29,16 @@ Secrets go in your **password manager** and the service's own settings page (Sup
 6. Try: create a club page → add an event and **tap the map to drop the venue pin** → approve the club → press **New post**, add a photo and pick the event → it shows on your club page and in the app's Home feed.
 7. On your phone (1.2): **Home** is the social feed: tap a story circle to watch stories, tap **+** to post photos or share your plans, use ⋯ on a post to report or block. Your posts (and whether they're still being checked) are under **You**. Explore shows the list in Expo Go (the map needs the test build, 1.7).
 8. Post a photo from the phone, then approve it at http://localhost:3000/admin/moderation: it appears for people who follow you.
+9. **Book something**: on an event, tap **Book** (or **RSVP** for free ones), pick tickets, pay with **Pretend it worked** on the pay page (test mode, no money moves), then open **Tickets**. Organizers can add promo codes on an event's page. (Payments need `pnpm exec supabase functions serve --env-file supabase/functions/.env` running.)
 
 The poster button is hidden while AI poster reading is on hold (your call, 21 Nov 2026).
 
-## What Claude needs next (weeks 5–6)
+## What Claude needs next (weeks 6–7)
 
 | # | What | Blocking? |
 |---|---|---|
-| 1 | **Test on your phone** with Expo Go (1.2) now, and install the test build (1.7) when it finishes, to see the map. | No. Local development continues (DECISIONS T27). |
+| 1 | **Razorpay test keys** (2.4) to switch booking from pretend payments to real test payments. | No: everything works with pretend payments meanwhile. |
+| 2 | **Test on your phone** with Expo Go (1.2): book an event, try a pretend payment, see Tickets. | No. |
 | 2 | **Restrict your Mapbox token** (1.5, last step). | No, but do it before sharing links widely. |
 | 3 | Decide the **domain** (2.5), since public event links will look like `nikl.app/e/...`. | No, the links can change later. |
 | 4 | **Anthropic key** (1.6): on hold, as you asked. | No. |
@@ -148,7 +150,17 @@ Indian rules (TRAI) require every business that sends SMS to register on a DLT p
 - [ ] Create an **MSG91** account and add your DLT entity ID, header and template ID.
 - [ ] Tell Claude it's done. Claude connects Supabase login to MSG91. Until then, login uses test numbers.
 
-### 2.4 Razorpay account + Route (test keys same day; going live takes days to weeks)
+### 2.4 Razorpay account + Route — **test keys needed now** (booking is built and waiting for them)
+*Booking works today with pretend payments on your computer. With test keys, Claude switches it to real Razorpay test payments (UPI test IDs, no real money).*
+- [ ] **dashboard.razorpay.com** → Sign up → switch to **Test Mode** (toggle at the top).
+- [ ] **Account & Settings → API Keys → Generate Key.** Copy the **Key ID** (starts with `rzp_test_`; fine to send to Claude) and save the **Key Secret** in your password manager (never in chat).
+- [ ] In PowerShell, in the project folder, store the secret for the hosted project yourself:
+  `pnpm exec supabase secrets set RAZORPAY_KEY_SECRET=` followed by the secret (no spaces). Tell Claude "Razorpay secret stored" and send the Key ID; Claude does the rest (key ID, payment mode, webhook secret, testing).
+- [ ] For your local copy, add one line to `supabase\functions\.env` (git-ignored): `RAZORPAY_KEY_SECRET=` + the secret.
+
+**Later (before the beta), the original steps:**
+
+### 2.4b Razorpay live mode and Route (test keys same day; going live takes days to weeks)
 - [ ] **dashboard.razorpay.com** → Sign up.
 - [ ] In **Test mode** → Settings → **API Keys** → generate a test key. Save the **key secret** in your password manager and don't paste it in chat.
 - [ ] Submit **KYC** for live mode: business PAN, bank account, and a website with **Privacy, Terms, Refund and Contact** pages. Claude can draft these pages.

@@ -125,14 +125,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "created_at": string,"fee_paise": number,"going_solo": boolean,"hold_expires_at": string | null,"id": string,"idempotency_key": string,"occurrence_id": string,"squad_id": string | null,"status": Database["public"]['Enums']["booking_status"],"total_paise": number,"updated_at": string,"user_id": string
+                    "confirmed_at": string | null,"created_at": string,"discount_paise": number,"fee_paise": number,"going_solo": boolean,"hold_expires_at": string | null,"id": string,"idempotency_key": string,"occurrence_id": string,"pay_token": string | null,"promo_code_id": string | null,"squad_id": string | null,"status": Database["public"]['Enums']["booking_status"],"subtotal_paise": number,"total_paise": number,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"fee_paise"?: number,"going_solo"?: boolean,"hold_expires_at"?: string | null,"id"?: string,"idempotency_key": string,"occurrence_id": string,"squad_id"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"total_paise"?: number,"updated_at"?: string,"user_id": string
+                    "confirmed_at"?: string | null,"created_at"?: string,"discount_paise"?: number,"fee_paise"?: number,"going_solo"?: boolean,"hold_expires_at"?: string | null,"id"?: string,"idempotency_key": string,"occurrence_id": string,"pay_token"?: string | null,"promo_code_id"?: string | null,"squad_id"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_paise"?: number,"total_paise"?: number,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"fee_paise"?: number,"going_solo"?: boolean,"hold_expires_at"?: string | null,"id"?: string,"idempotency_key"?: string,"occurrence_id"?: string,"squad_id"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"total_paise"?: number,"updated_at"?: string,"user_id"?: string
+                    "confirmed_at"?: string | null,"created_at"?: string,"discount_paise"?: number,"fee_paise"?: number,"going_solo"?: boolean,"hold_expires_at"?: string | null,"id"?: string,"idempotency_key"?: string,"occurrence_id"?: string,"pay_token"?: string | null,"promo_code_id"?: string | null,"squad_id"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_paise"?: number,"total_paise"?: number,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -140,6 +140,12 @@ isOneToOne: false
       columns: ["occurrence_id"]
 isOneToOne: false
       referencedRelation: "event_occurrences"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bookings_promo_code_id_fkey"
+      columns: ["promo_code_id"]
+isOneToOne: false
+      referencedRelation: "promo_codes"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "bookings_user_id_fkey"
@@ -339,6 +345,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"payment_events": {
+                  Row: {
+                    "event_id": string,"event_type": string,"received_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "event_id": string,"event_type": string,"received_at"?: string
+                  }
+                  Update: {
+                    "event_id"?: string,"event_type"?: string,"received_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"payments": {
                   Row: {
                     "amount_paise": number,"booking_id": string,"created_at": string,"id": string,"method": string | null,"provider": string,"provider_order_id": string | null,"provider_payment_id": string | null,"raw_webhook": Json | null,"status": Database["public"]['Enums']["payment_status"],"updated_at": string
@@ -531,6 +551,38 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"promo_codes": {
+                  Row: {
+                    "active": boolean,"amount_off_paise": number | null,"club_id": string,"code": string,"created_at": string,"created_by": string | null,"event_id": string | null,"id": string,"max_uses": number | null,"percent_off": number | null,"updated_at": string,"used": number,"valid_from": string | null,"valid_until": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"amount_off_paise"?: number | null,"club_id": string,"code": string,"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"id"?: string,"max_uses"?: number | null,"percent_off"?: number | null,"updated_at"?: string,"used"?: number,"valid_from"?: string | null,"valid_until"?: string | null
+                  }
+                  Update: {
+                    "active"?: boolean,"amount_off_paise"?: number | null,"club_id"?: string,"code"?: string,"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"id"?: string,"max_uses"?: number | null,"percent_off"?: number | null,"updated_at"?: string,"used"?: number,"valid_from"?: string | null,"valid_until"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promo_codes_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "clubs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "promo_codes_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "promo_codes_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"refunds": {
                   Row: {
                     "amount_paise": number,"created_at": string,"id": string,"payment_id": string,"provider_refund_id": string | null,"reason": string | null,"status": Database["public"]['Enums']["refund_status"],"updated_at": string
@@ -677,14 +729,14 @@ isOneToOne: false
                   ]
                 },"tickets": {
                   Row: {
-                    "booking_id": string,"checked_in_at": string | null,"checked_in_by": string | null,"code": string,"created_at": string,"id": string,"occurrence_id": string,"qr_token": string | null,"status": Database["public"]['Enums']["ticket_status"],"updated_at": string,"user_id": string
+                    "admits": number,"booking_id": string,"checked_in_at": string | null,"checked_in_by": string | null,"code": string,"created_at": string,"id": string,"occurrence_id": string,"qr_token": string | null,"status": Database["public"]['Enums']["ticket_status"],"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_id": string,"checked_in_at"?: string | null,"checked_in_by"?: string | null,"code": string,"created_at"?: string,"id"?: string,"occurrence_id": string,"qr_token"?: string | null,"status"?: Database["public"]['Enums']["ticket_status"],"updated_at"?: string,"user_id": string
+                    "admits"?: number,"booking_id": string,"checked_in_at"?: string | null,"checked_in_by"?: string | null,"code": string,"created_at"?: string,"id"?: string,"occurrence_id": string,"qr_token"?: string | null,"status"?: Database["public"]['Enums']["ticket_status"],"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "booking_id"?: string,"checked_in_at"?: string | null,"checked_in_by"?: string | null,"code"?: string,"created_at"?: string,"id"?: string,"occurrence_id"?: string,"qr_token"?: string | null,"status"?: Database["public"]['Enums']["ticket_status"],"updated_at"?: string,"user_id"?: string
+                    "admits"?: number,"booking_id"?: string,"checked_in_at"?: string | null,"checked_in_by"?: string | null,"code"?: string,"created_at"?: string,"id"?: string,"occurrence_id"?: string,"qr_token"?: string | null,"status"?: Database["public"]['Enums']["ticket_status"],"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -788,6 +840,17 @@ isOneToOne: false
             "are_friends":
 { Args: { "a": string,"b": string }; Returns: boolean
                            },
+"blocked_with_me":
+{ Args: { "other": string }; Returns: boolean
+                           },
+"booking_fee_paise":
+{ Args: { "p_amount": number }; Returns: number
+                           },
+"booking_for_payment":
+{ Args: { "p_token": string }; Returns: {
+              "area": string,"booking_id": string,"category": string,"discount_paise": number,"event_slug": string,"event_title": string,"fee_paise": number,"hold_expires_at": string,"items": Json,"poster_url": string,"starts_at": string,"status": string,"subtotal_paise": number,"ticket_count": number,"total_paise": number,"venue_name": string
+            }[]
+                           },
 "bump_poster_ai_usage":
 { Args: { "p_limit": number,"p_user_id": string }; Returns: boolean
                            },
@@ -803,11 +866,20 @@ isOneToOne: false
 "can_staff_occurrence":
 { Args: { "occ": string }; Returns: boolean
                            },
+"cancel_hold":
+{ Args: { "p_booking_id": string }; Returns: undefined
+                           },
+"claim_payment_event":
+{ Args: { "p_event_id": string,"p_event_type": string }; Returns: boolean
+                           },
 "club_is_live":
 { Args: { "club": string }; Returns: boolean
                            },
 "complete_profile":
 { Args: { "p_area": string,"p_dob_year": number,"p_interests": (string)[],"p_name": string,"p_username": string }; Returns: undefined
+                           },
+"confirm_booking":
+{ Args: { "p_booking_id": string }; Returns: undefined
                            },
 "create_club":
 { Args: { "p_area"?: string,"p_bio"?: string,"p_category": string,"p_handle": string,"p_kind"?: string,"p_name": string }; Returns: string
@@ -830,6 +902,9 @@ isOneToOne: false
 "event_visible":
 { Args: { "ev": string }; Returns: boolean
                            },
+"expire_holds":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "explore_events":
 { Args: { "p_from"?: string,"p_to"?: string }; Returns: {
               "area": string,"category": string,"club_handle": string,"club_name": string,"club_verified": boolean,"ends_at": string,"event_id": string,"going": number,"is_free": boolean,"lat": number,"lng": number,"min_price_paise": number,"more_dates": number,"occurrence_id": string,"poster_url": string,"slug": string,"spots_left": number,"starts_at": string,"tags": (string)[],"title": string,"venue_name": string
@@ -841,10 +916,18 @@ isOneToOne: false
 "following_count":
 { Args: { "p_user_id": string }; Returns: number
                            },
+"hold_booking":
+{ Args: { "p_idempotency_key"?: string,"p_items": Json,"p_occurrence_id": string,"p_promo_code"?: string }; Returns: {
+              "booking_id": string,"discount_paise": number,"fee_paise": number,"hold_expires_at": string,"pay_token": string,"status": string,"subtotal_paise": number,"total_paise": number
+            }[]
+                           },
 "home_feed":
 { Args: { "p_limit"?: number }; Returns: {
               "area": string,"author_type": string,"caption": string,"club_category": string,"club_handle": string,"club_id": string,"club_logo_url": string,"club_name": string,"club_verified": boolean,"created_at": string,"event_category": string,"event_id": string,"event_slug": string,"event_title": string,"following": boolean,"is_free": boolean,"kind": string,"like_count": number,"liked": boolean,"media_path": string,"min_price_paise": number,"mine": boolean,"post_id": string,"poster_url": string,"saved": boolean,"starts_at": string,"suggested": boolean,"under_review": boolean,"user_avatar_url": string,"user_id": string,"user_name": string,"user_username": string,"venue_name": string
             }[]
+                           },
+"i_follow":
+{ Args: { "target": string }; Returns: boolean
                            },
 "is_blocked_between":
 { Args: { "a": string,"b": string }; Returns: boolean
@@ -860,6 +943,9 @@ isOneToOne: false
                            },
 "is_follower":
 { Args: { "follower": string,"target_user": string }; Returns: boolean
+                           },
+"is_my_friend":
+{ Args: { "other": string }; Returns: boolean
                            },
 "is_platform_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
@@ -884,13 +970,40 @@ isOneToOne: false
               "author_handle": string,"author_id": string,"author_name": string,"author_type": string,"caption": string,"created_at": string,"event_title": string,"media_paths": (string)[],"reasons": (string)[],"report_count": number,"status": string,"target_id": string,"target_type": string
             }[]
                            },
+"my_bookings":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "area": string,"booking_id": string,"category": string,"club_name": string,"created_at": string,"ends_at": string,"event_id": string,"event_slug": string,"event_title": string,"hold_expires_at": string,"items": Json,"pay_token": string,"poster_url": string,"starts_at": string,"status": string,"tickets": Json,"total_paise": number,"venue_name": string
+            }[]
+                           },
 "occurrence_visible":
 { Args: { "occ": string }; Returns: boolean
+                           },
+"open_order_for":
+{ Args: { "p_token": string }; Returns: string
                            },
 "open_reports":
 { Args: Record<PropertyKey, never>; Returns: {
               "created_at": string,"details": string,"reason": string,"report_id": string,"reporter": string,"target_id": string,"target_label": string,"target_type": string
             }[]
+                           },
+"payment_captured":
+{ Args: { "p_amount": number,"p_method": string,"p_order_id": string,"p_payment_id": string,"p_raw"?: Json }; Returns: string
+                           },
+"payment_failed":
+{ Args: { "p_order_id": string,"p_payment_id": string,"p_raw"?: Json }; Returns: string
+                           },
+"price_selection":
+{ Args: { "p_items": Json,"p_occurrence_id": string,"p_promo_code": string,"p_user_id": string }; Returns: {
+              "discount_paise": number,"fee_paise": number,"promo_code_id": string,"seats": number,"subtotal_paise": number,"tickets": number,"total_paise": number
+            }[]
+                           },
+"quote_booking":
+{ Args: { "p_items": Json,"p_occurrence_id": string,"p_promo_code"?: string }; Returns: {
+              "discount_paise": number,"fee_paise": number,"subtotal_paise": number,"total_paise": number
+            }[]
+                           },
+"release_booking":
+{ Args: { "p_booking_id": string,"p_status": Database["public"]['Enums']["booking_status"] }; Returns: undefined
                            },
 "report_content":
 { Args: { "p_details"?: string,"p_reason": string,"p_target_id": string,"p_target_type": Database["public"]['Enums']["report_target"] }; Returns: undefined
@@ -949,6 +1062,11 @@ isOneToOne: false
 "set_save":
 { Args: { "p_event_id": string,"p_on": boolean }; Returns: undefined
                            },
+"start_payment":
+{ Args: { "p_order_id": string,"p_provider": string,"p_token": string }; Returns: {
+              "amount_paise": number,"booking_id": string
+            }[]
+                           },
 "story_feed":
 { Args: Record<PropertyKey, never>; Returns: {
               "area": string,"author_avatar_url": string,"author_category": string,"author_handle": string,"author_id": string,"author_name": string,"author_type": string,"author_verified": boolean,"created_at": string,"event_category": string,"event_id": string,"event_slug": string,"event_title": string,"expires_at": string,"following": boolean,"is_free": boolean,"kind": string,"media_path": string,"min_price_paise": number,"mine": boolean,"poster_url": string,"seen": boolean,"starts_at": string,"story_id": string,"template": Json,"under_review": boolean
@@ -958,6 +1076,9 @@ isOneToOne: false
 { Args: { "p_limit"?: number }; Returns: {
               "area": string,"category": string,"club_id": string,"followers": number,"handle": string,"kind": string,"logo_url": string,"name": string,"verified": boolean
             }[]
+                           },
+"ticket_code":
+{ Args: Record<PropertyKey, never>; Returns: string
                            },
 "user_profile":
 { Args: { "p_username": string }; Returns: {

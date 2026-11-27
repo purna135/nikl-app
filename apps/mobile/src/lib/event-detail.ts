@@ -3,7 +3,7 @@ import type { NiklClient } from '@nikl/supabase';
 import { supabase } from './supabase';
 
 const EVENT_SELECT =
-  'id, title, slug, description, poster_url, category, tags, clubs(name, handle, verified), venues(name, address, area, lat, lng), event_occurrences(id, starts_at, ends_at, status, capacity, seats_taken, ticket_tiers(name, price_paise, quantity, sold, position))';
+  'id, title, slug, description, poster_url, category, tags, clubs(name, handle, verified), venues(name, address, area, lat, lng), event_occurrences(id, starts_at, ends_at, status, capacity, seats_taken, ticket_tiers(id, name, price_paise, quantity, sold, position, seats_per_ticket, sale_starts_at, sale_ends_at))';
 
 /** Row-level security only returns published events of approved clubs to the public. */
 function fetchEventBySlug(client: NiklClient, slug: string) {
