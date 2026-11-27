@@ -6,7 +6,12 @@ import {
   formatIndianPhone,
   formatTimeAgo,
   formatPaise,
+  firstUnseen,
+  groupInOrder,
+  nextStory,
   normalizeIndianPhone,
+  previousStory,
+  shrinkWidth,
   inTimeWindow,
   priceSummary,
   slugify,
@@ -149,5 +154,51 @@ describe('stackBySpot', () => {
     expect(r.map((p) => p.stack)).toEqual([0, 0, 1]);
     expect(stackOffsetPx(0)).toEqual([0, 0]);
     expect(stackOffsetPx(1)).toEqual([0, -30]);
+  });
+});
+
+describe('stories', () => {
+  it('groups stories by author in the order authors first appear', () => {
+    const rows = [
+      { id: 1, a: 'club:x' },
+      { id: 2, a: 'user:y' },
+      { id: 3, a: 'club:x' },
+    ];
+    expect(groupInOrder(rows, (r) => r.a)).toEqual([
+      { key: 'club:x', items: [rows[0], rows[2]] },
+      { key: 'user:y', items: [rows[1]] },
+    ]);
+    expect(groupInOrder([], () => 'k')).toEqual([]);
+  });
+
+  it('moves to the next story, then the next group, then closes', () => {
+    const sizes = [2, 1, 3];
+    expect(nextStory(sizes, { group: 0, story: 0 })).toEqual({ group: 0, story: 1 });
+    expect(nextStory(sizes, { group: 0, story: 1 })).toEqual({ group: 1, story: 0 });
+    expect(nextStory(sizes, { group: 2, story: 2 })).toBeNull();
+    // An empty group (every story deleted) is skipped
+    expect(nextStory([1, 0, 1], { group: 0, story: 0 })).toEqual({ group: 2, story: 0 });
+  });
+
+  it('moves back a story, then to the start of the previous group, and stays at the very start', () => {
+    const sizes = [2, 3];
+    expect(previousStory(sizes, { group: 1, story: 2 })).toEqual({ group: 1, story: 1 });
+    expect(previousStory(sizes, { group: 1, story: 0 })).toEqual({ group: 0, story: 0 });
+    expect(previousStory(sizes, { group: 0, story: 0 })).toEqual({ group: 0, story: 0 });
+    expect(previousStory([1, 0, 2], { group: 2, story: 0 })).toEqual({ group: 0, story: 0 });
+  });
+
+  it('starts a group at the first story you have not seen', () => {
+    expect(firstUnseen([true, false, false])).toBe(1);
+    expect(firstUnseen([true, true])).toBe(0);
+    expect(firstUnseen([])).toBe(0);
+  });
+
+  it('shrinks wide photos to 1080 px before upload', () => {
+    expect(shrinkWidth(4032)).toBe(1080);
+    expect(shrinkWidth(1080)).toBeNull();
+    expect(shrinkWidth(800)).toBeNull();
+    expect(shrinkWidth(0)).toBe(1080);
+    expect(shrinkWidth(2000, 1440)).toBe(1440);
   });
 });

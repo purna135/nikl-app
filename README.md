@@ -15,7 +15,7 @@ Events, activities and clubs in your city, starting with Bhubaneswar. People can
 ```
 apps/
   mobile/        Expo (React Native) app for Android + iOS  (Expo SDK 58, Expo Router)
-  web/           Next.js 16 web app: public pages, booking, organizer dashboard (later)
+  web/           Next.js 16 web app: public event/club pages, Explore map, organizer dashboard, Nikl admin (booking: week 6)
 packages/
   tokens/        Colours, type, spacing (from the prototype). One accent: Nikl pink.
   utils/         Money in paise, IST dates, Indian phone numbers, categories, slugs (+ tests)
@@ -23,11 +23,16 @@ packages/
   supabase/      Supabase client factory, phone-OTP helpers, database types
 supabase/
   config.toml    Local Supabase settings (phone sign-up on, test OTP numbers)
-  migrations/    Database schema v1: 30 tables, row-level security on every table
+  migrations/    Database schema and changes (one file per change), row-level security on every table
+  tests/         Database tests (pgTAP): access rules, approvals, events, feed, stories, moderation
+  functions/     Edge Functions (extract-event: AI poster reading, on hold)
+docs/
+  FEATURES.md    What Nikl does today, in plain language
+  DEVELOPING.md  Guide for developers: repo map, data flow, database functions, how to add things
   seed.sql       Example Bhubaneswar clubs, venues, events, tickets, posts, stories
 ```
 
-Week 1 status (DEV_PLAN §7): monorepo, CI, schema v1, phone OTP login and app/web shells are in place. Login needs a running Supabase (local or hosted) to work end to end.
+New here? Read [docs/FEATURES.md](docs/FEATURES.md) for what Nikl does today and [docs/DEVELOPING.md](docs/DEVELOPING.md) for how the code works. Login needs a running Supabase (local or hosted) to work end to end.
 
 ## Setup
 
@@ -76,10 +81,10 @@ pnpm dev:mobile:go     # Same, for Expo Go (no map: Explore shows the list)
 | `pnpm build` | Production build of the web app |
 | `pnpm db:reset` | Rebuilds the local database from migrations + seed |
 | `pnpm db:types` | Regenerates database types after a migration |
-| `pnpm db:test` | Database tests (pgTAP, in `supabase/tests`): access rules, club approval, events, profiles |
+| `pnpm db:test` | Database tests (pgTAP, in `supabase/tests`): access rules, club approval, events, profiles, Explore, feed, stories, people's posts, privacy, moderation |
 | `pnpm exec supabase functions serve --env-file supabase/functions/.env` | Runs server functions locally (e.g. poster reading) |
 
-CI (GitHub Actions) runs typecheck, lint, tests and the web build on every pull request, and checks that the migrations apply.
+CI (GitHub Actions) runs on every push to `main` and every pull request: typecheck, lint, unit tests and the web build, plus a database job that applies the migrations, lints the schema and runs the pgTAP tests.
 
 ## Rules of the codebase
 
@@ -94,4 +99,4 @@ CI (GitHub Actions) runs typecheck, lint, tests and the web build on every pull 
 
 ## Status
 
-Weeks 1–4 done: login, organizer dashboard, club approval, events with weekly repeats and tickets, profile set-up, Explore (Mapbox map by default, filters, search), public event and club pages, venue pins, and the social layer (Instagram-style Home feed in the app, club stories row, club profiles, follow, like, save, club posts). AI poster reading is built but on hold. Next (week 5): stories viewer, user photo posts, moderation, report/block. Details in DEV_PLAN.md §7.
+Weeks 1–4 done: login, organizer dashboard, club approval, events with weekly repeats and tickets, profile set-up, Explore (Mapbox map by default, filters, search), public event and club pages, venue pins, and the social layer (Instagram-style Home feed in the app, club stories row, club profiles, follow, like, save, club posts). AI poster reading is built but on hold. Week 5 added stories (viewer, "Your plans", automatic event stories), people's photo posts, people profiles, report/block and the Nikl admin moderation queue. Next (week 6): booking with seat holds, promo codes and UPI payments. Details in DEV_PLAN.md §7.

@@ -178,4 +178,5 @@ where o.id::text like 'd0000000-%';
 
 -- Sample stories stay up for two weeks after a reset (real stories last 24 hours), so the
 -- stories row in the app has something to show during local testing.
-update public.stories set expires_at = now() + interval '14 days' where id::text like '50000000-%';
+update public.stories set expires_at = now() + interval '14 days'
+where id::text like '50000000-%' or (kind = 'event_auto' and event_id::text like 'e0000000-%');

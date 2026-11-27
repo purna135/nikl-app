@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { categoryById, formatEventWhen } from "@nikl/utils";
 import { isPlatformAdmin, requireUser } from "@/lib/auth";
 import { DashSkeleton, OrganizerHeader, Pill, clubStatusLabel } from "@/components/organizer-ui";
@@ -12,6 +13,12 @@ export default function AdminClubsPage() {
     <>
       <OrganizerHeader section="Nikl admin" />
       <main className="wrap dash">
+        <nav className="club-switch" aria-label="Admin pages" style={{ marginBottom: 16 }}>
+          <Link href="/admin/clubs" aria-current="page">
+            Club pages
+          </Link>
+          <Link href="/admin/moderation">Moderation</Link>
+        </nav>
         <h1>Club pages</h1>
         <Suspense fallback={<DashSkeleton />}>
           <AdminClubs />

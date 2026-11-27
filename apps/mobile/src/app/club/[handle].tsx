@@ -156,7 +156,7 @@ function ClubBody({
         </View>
 
         {club.review_status === 'approved' ? (
-          <FollowButton following={following} clubName={club.name} onPress={() => social.setFollow(club.id, !following)} />
+          <FollowButton following={following} name={club.name} onPress={() => social.setFollow(club.id, !following)} />
         ) : (
           // Only the club's own team sees a club that isn't approved yet (DECISIONS.md P15).
           <T variant="small">Waiting for Nikl’s approval. People can follow the club once it’s live.</T>

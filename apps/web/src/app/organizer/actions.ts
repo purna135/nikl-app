@@ -207,6 +207,42 @@ export async function deletePostAction(fd: FormData): Promise<void> {
   back();
 }
 
+/** Club story: a photo, an event card, or both. Live for 24 hours (club content publishes straight away, P17). */
+export async function createStoryAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const clubId = text(fd, "clubId");
+  const eventId = text(fd, "eventId");
+  const mediaPath = text(fd, "mediaPath");
+  if (!clubId) return { ok: false, message: "Missing club." };
+  if (!eventId && !mediaPath) return { ok: false, message: "Add a photo or pick an event." };
+  const { supabase, user } = await signedIn();
+  if (!user) return { ok: false, message: "Your session expired. Log in again." };
+  if (mediaPath && (!POST_MEDIA_PATH.test(mediaPath) || !mediaPath.startsWith(`${user.id}/`))) {
+    return { ok: false, message: "Upload the photo again." };
+  }
+  const { error } = await supabase.rpc("create_club_story", { p_club_id: clubId, p_media_path: mediaPath, p_event_id: eventId });
+  if (error) return { ok: false, message: dbErrorMessage(error) };
+  redirect(`/organizer?club=${clubId}&story=1`);
+}
+
+/** Delete one of the club's stories (and its photo file). */
+export async function deleteStoryAction(fd: FormData): Promise<void> {
+  const id = text(fd, "storyId");
+  const clubId = text(fd, "clubId");
+  if (!id) return;
+  const back = (error?: string) =>
+    redirect(`/organizer?${new URLSearchParams({ ...(clubId ? { club: clubId } : {}), ...(error ? { error } : {}) })}`);
+  const { supabase, user } = await signedIn();
+  if (!user) redirect("/login?next=/organizer");
+  const { data, error } = await supabase.from("stories").delete().eq("id", id).eq("author_type", "club").select("media_url");
+  if (error || !data?.length) back(error ? dbErrorMessage(error) : "Only the club's owners and admins can delete stories.");
+  const path = data?.[0]?.media_url;
+  if (path && POST_MEDIA_PATH.test(path)) {
+    const { error: rmError } = await supabase.storage.from("post-media").remove([path]);
+    if (rmError) console.error("story photo cleanup failed:", rmError.message);
+  }
+  back();
+}
+
 /** Add, move or remove an event's map pin (the database gives the event its own venue copy). */
 export async function setEventPinAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const id = text(fd, "eventId");

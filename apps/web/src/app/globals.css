@@ -330,3 +330,7 @@ a.post-tile:hover { filter: brightness(.95); }
 .post-list li { display: flex; gap: 12px; align-items: center; padding: 10px 0; }
 .post-list li + li { border-top: 1px solid var(--hair); }
 .post-list .thumb { width: 52px; height: 65px; }
+
+/* ---------- week 5: moderation, stories ---------- */
+.mod-photos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.mod-photos img { width: 120px; height: 150px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }

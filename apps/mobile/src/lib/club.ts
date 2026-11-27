@@ -36,7 +36,8 @@ async function fetchClub(handle: string, userId: string | null): Promise<ClubDat
   if (!club) return { club: null, followers: 0, following: false, posts: [] };
 
   const [followers, posts, mine] = await Promise.all([
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('target_type', 'club').eq('target_id', club.id),
+    // Follow lists are private (DECISIONS.md P19); the count is public through follower_count().
+    supabase.rpc('follower_count', { p_target_type: 'club', p_target_id: club.id }),
     fetchClubPosts(supabase, club.id),
     userId
       ? supabase
@@ -54,7 +55,7 @@ async function fetchClub(handle: string, userId: string | null): Promise<ClubDat
   ]);
   if (followers.error) throw followers.error;
   if (posts.error) throw posts.error;
-  return { club, followers: followers.count ?? 0, following: mine, posts: posts.data };
+  return { club, followers: followers.data ?? 0, following: mine, posts: posts.data };
 }
 
 /** A club's profile by handle: details, follower count, whether you follow it, and its posts. */

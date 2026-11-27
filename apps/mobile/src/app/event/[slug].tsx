@@ -6,6 +6,7 @@ import { PosterTile } from '@/components/event-card';
 import { openClub } from '@/components/feed';
 import { IconButton, VerifiedTick } from '@/components/social';
 import { Button, EmptyState, T } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
 import { spotsLabel, upcomingDates, useEventDetail, type EventDate, type EventDetail } from '@/lib/event-detail';
 import { categoryLook } from '@/lib/explore';
 import { shareEvent, useSavedEventIds, useSocial } from '@/lib/social';
@@ -80,11 +81,19 @@ export default function EventScreen() {
 
 function EventBody({ event, now }: { event: EventDetail; now: Date }) {
   const t = useNiklTheme();
+  const { loading: authLoading, session } = useAuth();
   const look = categoryLook(event.category);
   const dates = upcomingDates(event, now);
   const venue = event.venues;
   const club = event.clubs;
   const hasPin = venue?.lat != null && venue?.lng != null;
+
+  // "Your plans": share this event as a 24-hour story (needs a login, and an upcoming date).
+  const shareToPlans = () => {
+    if (authLoading) return;
+    if (!session) router.push('/login');
+    else router.push({ pathname: '/create/plan', params: { event: event.id } });
+  };
 
   const openMaps = () => {
     if (!venue || venue.lat == null || venue.lng == null) return;
@@ -158,7 +167,10 @@ function EventBody({ event, now }: { event: EventDetail; now: Date }) {
           {hasPin && <Button label="Open in Maps" kind="secondary" onPress={openMaps} />}
         </View>
 
-        <Button label="Share" kind="secondary" onPress={() => shareEvent(event.title, event.slug)} />
+        <View style={styles.shareRow}>
+          {dates.length > 0 && <Button label="Share to your plans" kind="secondary" onPress={shareToPlans} />}
+          <Button label="Share" kind="secondary" onPress={() => shareEvent(event.title, event.slug)} />
+        </View>
       </ScrollView>
 
       <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: t.app, borderTopColor: t.hair }]}>
@@ -210,6 +222,7 @@ const styles = StyleSheet.create({
   chevron: { fontSize: 22, marginTop: -2 },
   description: { lineHeight: 22 },
   section: { gap: space.md },
+  shareRow: { gap: space.sm },
   dateCard: { borderWidth: 1, borderRadius: radius.lg, padding: space.md, gap: space.sm },
   dateHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   tierRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },

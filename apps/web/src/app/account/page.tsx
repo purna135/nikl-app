@@ -5,8 +5,8 @@ import { AccountView } from "./account-view";
 export const metadata: Metadata = { title: "Your account" };
 
 /**
- * The session is read in the browser for week 1. Server-side session checks (behind a
- * <Suspense> boundary, as Cache Components requires) arrive with the organizer dashboard in week 2.
+ * The session is read in the browser here. Organizer and admin pages check it on the server instead
+ * (lib/auth.ts, inside <Suspense> as Cache Components requires).
  */
 export default function AccountPage() {
   return (

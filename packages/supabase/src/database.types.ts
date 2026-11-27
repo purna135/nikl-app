@@ -23,7 +23,27 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "audit_log": {
+            "app_settings": {
+                  Row: {
+                    "key": string,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "key": string,"updated_at"?: string,"updated_by"?: string | null,"value": NonNullable<Json>
+                  }
+                  Update: {
+                    "key"?: string,"updated_at"?: string,"updated_by"?: string | null,"value"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "app_settings_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"audit_log": {
                   Row: {
                     "action": string,"actor_id": string | null,"after": Json | null,"before": Json | null,"created_at": string,"entity_id": string | null,"entity_type": string,"id": number
                   }
@@ -447,14 +467,14 @@ isOneToOne: false
                   ]
                 },"posts": {
                   Row: {
-                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"caption": string | null,"club_id": string | null,"created_at": string,"created_by": string | null,"event_id": string | null,"id": string,"kind": Database["public"]['Enums']["post_kind"],"moderation_status": Database["public"]['Enums']["moderation_status"],"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
+                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"caption": string | null,"club_id": string | null,"created_at": string,"created_by": string | null,"event_id": string | null,"id": string,"kind": Database["public"]['Enums']["post_kind"],"moderation_note": string | null,"moderation_status": Database["public"]['Enums']["moderation_status"],"updated_at": string,"visibility": Database["public"]['Enums']["visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"caption"?: string | null,"club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["post_kind"],"moderation_status"?: Database["public"]['Enums']["moderation_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"caption"?: string | null,"club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["post_kind"],"moderation_note"?: string | null,"moderation_status"?: Database["public"]['Enums']["moderation_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Update: {
-                    "author_id"?: string,"author_type"?: Database["public"]['Enums']["author_type"],"caption"?: string | null,"club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["post_kind"],"moderation_status"?: Database["public"]['Enums']["moderation_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
+                    "author_id"?: string,"author_type"?: Database["public"]['Enums']["author_type"],"caption"?: string | null,"club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["post_kind"],"moderation_note"?: string | null,"moderation_status"?: Database["public"]['Enums']["moderation_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["visibility"]
                   }
                   Relationships: [
                     {
@@ -585,14 +605,14 @@ isOneToOne: false
                   ]
                 },"stories": {
                   Row: {
-                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"created_at": string,"created_by": string | null,"event_id": string | null,"expires_at": string,"id": string,"kind": Database["public"]['Enums']["story_kind"],"media_url": string | null,"moderation_status": Database["public"]['Enums']["moderation_status"],"template": Json | null
+                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"created_at": string,"created_by": string | null,"event_id": string | null,"expires_at": string,"id": string,"kind": Database["public"]['Enums']["story_kind"],"media_url": string | null,"moderation_note": string | null,"moderation_status": Database["public"]['Enums']["moderation_status"],"template": Json | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"expires_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["story_kind"],"media_url"?: string | null,"moderation_status"?: Database["public"]['Enums']["moderation_status"],"template"?: Json | null
+                    "author_id": string,"author_type": Database["public"]['Enums']["author_type"],"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"expires_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["story_kind"],"media_url"?: string | null,"moderation_note"?: string | null,"moderation_status"?: Database["public"]['Enums']["moderation_status"],"template"?: Json | null
                   }
                   Update: {
-                    "author_id"?: string,"author_type"?: Database["public"]['Enums']["author_type"],"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"expires_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["story_kind"],"media_url"?: string | null,"moderation_status"?: Database["public"]['Enums']["moderation_status"],"template"?: Json | null
+                    "author_id"?: string,"author_type"?: Database["public"]['Enums']["author_type"],"created_at"?: string,"created_by"?: string | null,"event_id"?: string | null,"expires_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["story_kind"],"media_url"?: string | null,"moderation_note"?: string | null,"moderation_status"?: Database["public"]['Enums']["moderation_status"],"template"?: Json | null
                   }
                   Relationships: [
                     {
@@ -765,7 +785,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "bump_poster_ai_usage":
+            "are_friends":
+{ Args: { "a": string,"b": string }; Returns: boolean
+                           },
+"bump_poster_ai_usage":
 { Args: { "p_limit": number,"p_user_id": string }; Returns: boolean
                            },
 "can_edit_post":
@@ -792,8 +815,17 @@ isOneToOne: false
 "create_club_post":
 { Args: { "p_caption"?: string,"p_club_id": string,"p_event_id"?: string,"p_media_paths"?: (string)[] }; Returns: string
                            },
+"create_club_story":
+{ Args: { "p_club_id": string,"p_event_id"?: string,"p_media_path"?: string }; Returns: string
+                           },
 "create_event":
 { Args: { "p_capacity"?: number,"p_category": string,"p_club_id": string,"p_description"?: string,"p_ends_at"?: string,"p_poster_url"?: string,"p_publish"?: boolean,"p_repeat_weeks"?: number,"p_starts_at": string,"p_tags"?: (string)[],"p_tiers"?: Json,"p_title": string,"p_venue_address"?: string,"p_venue_area"?: string,"p_venue_id"?: string,"p_venue_lat"?: number,"p_venue_lng"?: number,"p_venue_name"?: string }; Returns: string
+                           },
+"create_user_post":
+{ Args: { "p_caption"?: string,"p_event_id"?: string,"p_media_paths": (string)[],"p_visibility"?: string }; Returns: string
+                           },
+"create_user_story":
+{ Args: { "p_event_id": string,"p_media_path"?: string,"p_note"?: string }; Returns: string
                            },
 "event_visible":
 { Args: { "ev": string }; Returns: boolean
@@ -803,10 +835,19 @@ isOneToOne: false
               "area": string,"category": string,"club_handle": string,"club_name": string,"club_verified": boolean,"ends_at": string,"event_id": string,"going": number,"is_free": boolean,"lat": number,"lng": number,"min_price_paise": number,"more_dates": number,"occurrence_id": string,"poster_url": string,"slug": string,"spots_left": number,"starts_at": string,"tags": (string)[],"title": string,"venue_name": string
             }[]
                            },
+"follower_count":
+{ Args: { "p_target_id": string,"p_target_type": Database["public"]['Enums']["follow_target"] }; Returns: number
+                           },
+"following_count":
+{ Args: { "p_user_id": string }; Returns: number
+                           },
 "home_feed":
 { Args: { "p_limit"?: number }; Returns: {
-              "area": string,"caption": string,"club_category": string,"club_handle": string,"club_id": string,"club_logo_url": string,"club_name": string,"club_verified": boolean,"created_at": string,"event_category": string,"event_id": string,"event_slug": string,"event_title": string,"following": boolean,"is_free": boolean,"kind": string,"like_count": number,"liked": boolean,"media_path": string,"min_price_paise": number,"post_id": string,"poster_url": string,"saved": boolean,"starts_at": string,"suggested": boolean,"venue_name": string
+              "area": string,"author_type": string,"caption": string,"club_category": string,"club_handle": string,"club_id": string,"club_logo_url": string,"club_name": string,"club_verified": boolean,"created_at": string,"event_category": string,"event_id": string,"event_slug": string,"event_title": string,"following": boolean,"is_free": boolean,"kind": string,"like_count": number,"liked": boolean,"media_path": string,"min_price_paise": number,"mine": boolean,"post_id": string,"poster_url": string,"saved": boolean,"starts_at": string,"suggested": boolean,"under_review": boolean,"user_avatar_url": string,"user_id": string,"user_name": string,"user_username": string,"venue_name": string
             }[]
+                           },
+"is_blocked_between":
+{ Args: { "a": string,"b": string }; Returns: boolean
                            },
 "is_club_admin":
 { Args: { "club": string }; Returns: boolean
@@ -817,14 +858,45 @@ isOneToOne: false
 "is_club_staff":
 { Args: { "club": string }; Returns: boolean
                            },
+"is_follower":
+{ Args: { "follower": string,"target_user": string }; Returns: boolean
+                           },
 "is_platform_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "is_valid_category":
 { Args: { "c": string }; Returns: boolean
                            },
+"like_count":
+{ Args: { "p_post_id": string }; Returns: number
+                           },
+"mark_stories_seen":
+{ Args: { "p_story_ids": (string)[] }; Returns: undefined
+                           },
+"moderate_content":
+{ Args: { "p_decision": Database["public"]['Enums']["moderation_status"],"p_note"?: string,"p_target_id": string,"p_target_type": string }; Returns: (string)[]
+                           },
+"moderation_default":
+{ Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["moderation_status"]
+                           },
+"moderation_queue":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "author_handle": string,"author_id": string,"author_name": string,"author_type": string,"caption": string,"created_at": string,"event_title": string,"media_paths": (string)[],"reasons": (string)[],"report_count": number,"status": string,"target_id": string,"target_type": string
+            }[]
+                           },
 "occurrence_visible":
 { Args: { "occ": string }; Returns: boolean
+                           },
+"open_reports":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "created_at": string,"details": string,"reason": string,"report_id": string,"reporter": string,"target_id": string,"target_label": string,"target_type": string
+            }[]
+                           },
+"report_content":
+{ Args: { "p_details"?: string,"p_reason": string,"p_target_id": string,"p_target_type": Database["public"]['Enums']["report_target"] }; Returns: undefined
+                           },
+"resolve_report":
+{ Args: { "p_note"?: string,"p_report_id": string,"p_status": Database["public"]['Enums']["report_status"] }; Returns: undefined
                            },
 "review_club":
 { Args: { "p_club_id": string,"p_decision": Database["public"]['Enums']["club_review_status"],"p_note"?: string }; Returns: {
@@ -856,22 +928,44 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"set_block":
+{ Args: { "p_on": boolean,"p_user_id": string }; Returns: undefined
+                           },
 "set_event_pin":
 { Args: { "p_event_id": string,"p_lat"?: number,"p_lng"?: number }; Returns: undefined
                            },
 "set_follow_club":
 { Args: { "p_club_id": string,"p_on": boolean }; Returns: undefined
                            },
+"set_follow_user":
+{ Args: { "p_on": boolean,"p_user_id": string }; Returns: undefined
+                           },
 "set_like":
 { Args: { "p_on": boolean,"p_post_id": string }; Returns: undefined
                            },
+"set_moderation_mode":
+{ Args: { "p_mode": string }; Returns: undefined
+                           },
 "set_save":
 { Args: { "p_event_id": string,"p_on": boolean }; Returns: undefined
+                           },
+"story_feed":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "area": string,"author_avatar_url": string,"author_category": string,"author_handle": string,"author_id": string,"author_name": string,"author_type": string,"author_verified": boolean,"created_at": string,"event_category": string,"event_id": string,"event_slug": string,"event_title": string,"expires_at": string,"following": boolean,"is_free": boolean,"kind": string,"media_path": string,"min_price_paise": number,"mine": boolean,"poster_url": string,"seen": boolean,"starts_at": string,"story_id": string,"template": Json,"under_review": boolean
+            }[]
                            },
 "suggested_clubs":
 { Args: { "p_limit"?: number }; Returns: {
               "area": string,"category": string,"club_id": string,"followers": number,"handle": string,"kind": string,"logo_url": string,"name": string,"verified": boolean
             }[]
+                           },
+"user_profile":
+{ Args: { "p_username": string }; Returns: {
+              "area": string,"avatar_url": string,"bio": string,"blocked_by_me": boolean,"followers": number,"following": number,"follows_me": boolean,"i_follow": boolean,"is_me": boolean,"name": string,"user_id": string,"username": string
+            }[]
+                           },
+"valid_media_path":
+{ Args: { "owner": string,"path": string }; Returns: boolean
                            }
           }
           Enums: {

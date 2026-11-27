@@ -50,7 +50,7 @@ export default async function Home() {
             </ul>
           ) : (
             <p className="note">
-              Events show up here once clubs start posting. Organizers: create an event from your poster in about two
+              Events show up here once clubs start posting. Organizers: put your next event on Nikl in about two
               minutes.
             </p>
           )}

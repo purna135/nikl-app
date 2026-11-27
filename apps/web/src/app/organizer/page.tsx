@@ -5,12 +5,12 @@ import { formatEventWhen, formatTimeAgo } from "@nikl/utils";
 import { isPlatformAdmin, requireUser } from "@/lib/auth";
 import { DashSkeleton, OrganizerHeader, Pill, PosterThumb, clubStatusLabel, eventStatusLabel } from "@/components/organizer-ui";
 import { CreateClubForm } from "./create-club-form";
-import { deletePostAction } from "./actions";
+import { deletePostAction, deleteStoryAction } from "./actions";
 import { postMediaUrl } from "@/lib/media";
 
 export const metadata: Metadata = { title: "Organizer dashboard" };
 
-export default function OrganizerPage({ searchParams }: { searchParams: Promise<{ club?: string; posted?: string; error?: string }> }) {
+export default function OrganizerPage({ searchParams }: { searchParams: Promise<{ club?: string; posted?: string; story?: string; error?: string }> }) {
   return (
     <>
       <OrganizerHeader />
@@ -22,6 +22,10 @@ export default function OrganizerPage({ searchParams }: { searchParams: Promise<
     </>
   );
 }
+
+/** Now, for "stories still live". Runs per request, after the login check. */
+const nowIso = () => new Date().toISOString();
+const hoursLeft = (iso: string) => Math.max(1, Math.round((new Date(iso).getTime() - Date.now()) / 3_600_000));
 
 /** "3h", "2d" (shared with the app). Runs per request, after the login check. */
 const timeAgo = (iso: string) => formatTimeAgo(iso);
@@ -35,8 +39,8 @@ function summarizeDates(occurrences: { starts_at: string; status: string; seats_
   return { next: upcoming[0], moreDates: Math.max(0, upcoming.length - 1), going: upcoming.reduce((s, o) => s + o.seats_taken, 0) };
 }
 
-async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: string; posted?: string; error?: string }> }) {
-  const { club: clubParam, posted, error } = await searchParams;
+async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: string; posted?: string; story?: string; error?: string }> }) {
+  const { club: clubParam, posted, story, error } = await searchParams;
   const { supabase, user } = await requireUser("/organizer");
   const [admin, { data: memberships }] = await Promise.all([
     isPlatformAdmin(supabase),
@@ -49,15 +53,25 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
 
   const clubs = (memberships ?? []).flatMap((m) => (m.clubs ? [{ ...m.clubs, role: m.role }] : []));
   let pendingForAdmin = 0;
+  let toModerate = 0;
   if (admin) {
-    const { count } = await supabase.from("clubs").select("id", { count: "exact", head: true }).eq("review_status", "pending");
+    const [{ count }, { data: queue }] = await Promise.all([
+      supabase.from("clubs").select("id", { count: "exact", head: true }).eq("review_status", "pending"),
+      supabase.rpc("moderation_queue"),
+    ]);
     pendingForAdmin = count ?? 0;
+    toModerate = queue?.length ?? 0;
   }
 
   const adminBanner = admin && (
-    <Link href="/admin/clubs" className="admin-banner">
-      <strong>Nikl admin</strong> · {pendingForAdmin === 0 ? "No club pages waiting for review" : `${pendingForAdmin} club page${pendingForAdmin > 1 ? "s" : ""} waiting for review`} →
-    </Link>
+    <div className="stack" style={{ gap: 8 }}>
+      <Link href="/admin/clubs" className="admin-banner">
+        <strong>Nikl admin</strong> · {pendingForAdmin === 0 ? "No club pages waiting for review" : `${pendingForAdmin} club page${pendingForAdmin > 1 ? "s" : ""} waiting for review`} →
+      </Link>
+      <Link href="/admin/moderation" className="admin-banner">
+        <strong>Moderation</strong> · {toModerate === 0 ? "Nothing to check" : `${toModerate} post${toModerate > 1 ? "s" : ""} or stor${toModerate > 1 ? "ies" : "y"} to check`} →
+      </Link>
+    </div>
   );
 
   if (clubs.length === 0) {
@@ -89,16 +103,28 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
 
   const rows = (events ?? []).map((e) => ({ ...e, ...summarizeDates(e.event_occurrences) }));
 
-  const [{ count: followers }, { data: posts }] = await Promise.all([
-    supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("target_type", "club").eq("target_id", club.id),
+  const [{ data: followers }, { data: posts }, { data: stories }] = await Promise.all([
+    supabase.rpc("follower_count", { p_target_type: "club", p_target_id: club.id }),
     supabase
       .from("posts")
-      .select("id, caption, created_at, events(title, poster_url, category), post_media(url, position), likes(count)")
+      .select("id, caption, created_at, moderation_status, events(title, poster_url, category), post_media(url, position)")
       .eq("author_type", "club")
       .eq("author_id", club.id)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase
+      .from("stories")
+      .select("id, kind, media_url, expires_at, created_at, moderation_status, events(title, poster_url, category)")
+      .eq("author_type", "club")
+      .eq("author_id", club.id)
+      .gt("expires_at", nowIso())
+      .order("created_at", { ascending: false }),
   ]);
+  // Who liked what is private (P19); counts come from a public function.
+  const likeCounts = await Promise.all(
+    (posts ?? []).map((p) => supabase.rpc("like_count", { p_post_id: p.id }).then(({ data }) => [p.id, data ?? 0] as const)),
+  );
+  const likesOf = new Map(likeCounts);
 
   return (
     <div className="stack">
@@ -122,6 +148,11 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
             {error.slice(0, 200)}
           </p>
         )}
+        {story && (
+          <p className="notice notice-good" role="status">
+            Story shared. It shows at the top of people&apos;s Home for 24 hours{live ? "" : " once your page is approved"}.
+          </p>
+        )}
         {posted && (
           <p className="notice notice-good" role="status">
             Posted. It&apos;s in your followers&apos; feed{live ? "" : " once your page is approved"}.
@@ -135,7 +166,7 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
         )}
         {club.review_status === "rejected" && (
           <p className="notice notice-bad">
-            Your page needs a few changes{club.review_note ? `: ${club.review_note}` : "."} Editing your page sends it back for review.
+            Your page needs a few changes{club.review_note ? `: ${club.review_note}` : "."} Editing club pages is coming soon; until then, Nikl will help you make the changes.
           </p>
         )}
         {club.review_status === "suspended" && (
@@ -161,11 +192,11 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
             </Link>
           )}
         </div>
-        {!canManage && <p className="notice notice-warn">You&apos;re check-in staff for this club: you can see events and scan tickets, but only owners and admins can change them.</p>}
+        {!canManage && <p className="notice notice-warn">You&apos;re check-in staff for this club: you can see events (ticket scanning arrives with bookings), but only owners and admins can change them.</p>}
         {rows.length === 0 ? (
           <div className="empty">
             <p>No events yet.</p>
-            <p className="muted">Start with your next one. If you already made a poster for Instagram, upload it and we&apos;ll fill in the details.</p>
+            <p className="muted">Start with your next one: add the poster, date, venue and tickets in a couple of minutes.</p>
           </div>
         ) : (
           <ul className="event-list">
@@ -197,6 +228,51 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
 
       <section className="panel">
         <div className="section-head">
+          <h2>
+            Stories <span className="muted small">(live now: {(stories ?? []).length})</span>
+          </h2>
+          {canManage && (
+            <Link href={`/organizer/stories/new?club=${club.id}`} className="btn">
+              New story
+            </Link>
+          )}
+        </div>
+        {(stories ?? []).length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>
+            No live stories. Publishing an event adds one automatically; add your own for lineups, behind the scenes or last spots.
+          </p>
+        ) : (
+          <ul className="post-list">
+            {(stories ?? []).map((st) => (
+              <li key={st.id}>
+                <PosterThumb
+                  url={st.moderation_status === "rejected" ? null : postMediaUrl(st.media_url) ?? st.events?.poster_url ?? null}
+                  category={st.events?.category ?? club.category ?? "social"}
+                />
+                <span className="event-main">
+                  <strong>{st.kind === "event_auto" ? `Auto story: ${st.events?.title ?? "event"}` : st.events?.title ? `Story: ${st.events.title}` : "Photo story"}</strong>
+                  <span className="muted">
+                    {timeAgo(st.created_at)} · {hoursLeft(st.expires_at)}h left
+                  </span>
+                  <ContentStatus status={st.moderation_status} />
+                </span>
+                {canManage && (
+                  <form action={deleteStoryAction}>
+                    <input type="hidden" name="storyId" value={st.id} />
+                    <input type="hidden" name="clubId" value={club.id} />
+                    <button type="submit" className="link danger-link">
+                      Delete
+                    </button>
+                  </form>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="section-head">
           <h2>Posts</h2>
           {canManage && (
             <Link href={`/organizer/posts/new?club=${club.id}`} className="btn primary">
@@ -214,15 +290,21 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
             {(posts ?? []).map((p) => (
               <li key={p.id}>
                 <PosterThumb
-                  url={postMediaUrl([...p.post_media].sort((a, b) => a.position - b.position)[0]?.url) ?? p.events?.poster_url ?? null}
+                  url={
+                    // Removed posts' photos were deleted by Nikl, so don't try to show them.
+                    p.moderation_status === "rejected"
+                      ? null
+                      : postMediaUrl([...p.post_media].sort((a, b) => a.position - b.position)[0]?.url) ?? p.events?.poster_url ?? null
+                  }
                   category={p.events?.category ?? club.category ?? "social"}
                 />
                 <span className="event-main">
                   <strong>{p.caption ? (p.caption.length > 80 ? `${p.caption.slice(0, 80)}…` : p.caption) : p.events?.title ?? "Photo post"}</strong>
                   <span className="muted">
                     {timeAgo(p.created_at)}
-                    {p.events?.title ? ` · ${p.events.title}` : ""} · {p.likes[0]?.count ?? 0} likes
+                    {p.events?.title ? ` · ${p.events.title}` : ""} · {likesOf.get(p.id) ?? 0} likes
                   </span>
+                  <ContentStatus status={p.moderation_status} />
                 </span>
                 {canManage && (
                   <form action={deletePostAction}>
@@ -240,4 +322,11 @@ async function OrganizerHome({ searchParams }: { searchParams: Promise<{ club?: 
       </section>
     </div>
   );
+}
+
+/** Shows when Nikl removed a post or story, or reports have hidden it (the team also gets a notification). */
+function ContentStatus({ status }: { status: string }) {
+  if (status === "rejected") return <Pill tone="bad">Removed by Nikl</Pill>;
+  if (status === "flagged") return <Pill tone="warn">Hidden while Nikl checks reports</Pill>;
+  return null;
 }

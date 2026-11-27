@@ -39,7 +39,15 @@
         }
       ],
       "expo-sqlite",
-      "@rnmapbox/maps"
+      "@rnmapbox/maps",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nikl uses your photos only when you pick them for a post or your plans.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,11 +1,15 @@
+import type { ReactNode } from 'react';
 import { router } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { categoryById, formatIndianPhone } from '@nikl/utils';
 import { EventCard } from '@/components/event-card';
+import { PersonPostGrid, ProfileHeader } from '@/components/people';
 import { Button, EmptyState, Screen, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { useExploreEvents } from '@/lib/explore';
-import { isProfileComplete, useMyProfile } from '@/lib/profile';
+import { usePersonProfile } from '@/lib/people';
+import { isProfileComplete, useMyProfile, type MyProfile } from '@/lib/profile';
+import { useHidden } from '@/lib/safety';
 import { useSavedEventIds, useSocial } from '@/lib/social';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { radius, space, useNiklTheme } from '@/theme';
@@ -48,7 +52,8 @@ function SignedInProfile({ userId, phone }: { userId: string; phone?: string }) 
   const { profile, loading } = useMyProfile(userId);
   const phoneText = phone ? formatIndianPhone(`+${phone}`) : 'Not available';
 
-  if (loading) {
+  // Coming back to this tab reloads the profile; keep showing the last one meanwhile.
+  if (loading && !profile) {
     return (
       <Screen>
         <ActivityIndicator style={{ marginTop: space.xxl }} />
@@ -67,33 +72,93 @@ function SignedInProfile({ userId, phone }: { userId: string; phone?: string }) 
     );
   }
 
+  const details = (
+    <>
+      <View style={styles.chips}>
+        {(profile?.interests ?? []).map((id) => {
+          const c = categoryById(id);
+          return c ? (
+            <View key={id} style={[styles.chip, { backgroundColor: t.tints[c.tint] }]}>
+              <T style={{ color: t.onTint, fontSize: 13, fontWeight: '600' }}>
+                {c.emoji} {c.short}
+              </T>
+            </View>
+          ) : null;
+        })}
+      </View>
+      <T variant="small">Phone (only you can see this): {phoneText}</T>
+    </>
+  );
+
   return (
     <Screen>
       <T variant="title">You</T>
-      <View style={[styles.card, { backgroundColor: t.surface2 }]}>
-        <T variant="heading">{profile?.name}</T>
-        <T variant="muted">
-          @{profile?.username}
-          {profile?.area ? ` · ${profile.area}` : ''}
-        </T>
-        <View style={styles.chips}>
-          {(profile?.interests ?? []).map((id) => {
-            const c = categoryById(id);
-            return c ? (
-              <View key={id} style={[styles.chip, { backgroundColor: t.tints[c.tint] }]}>
-                <T style={{ color: t.onTint, fontSize: 13, fontWeight: '600' }}>
-                  {c.emoji} {c.short}
-                </T>
-              </View>
-            ) : null;
-          })}
-        </View>
-        <T variant="small">Phone (only you can see this): {phoneText}</T>
-      </View>
+      {profile?.username ? <MyProfileAndPosts profile={profile} username={profile.username} details={details} /> : null}
       <SavedEvents />
       <T variant="muted">Your plans, memories and City Passport will live here.</T>
       <Button label="Log out" kind="secondary" onPress={() => supabase?.auth.signOut()} />
     </Screen>
+  );
+}
+
+/** Your profile header (counts) and your posts, with "Under review" and "Removed" on your own tiles. */
+function MyProfileAndPosts({ profile, username, details }: { profile: MyProfile; username: string; details: ReactNode }) {
+  const t = useNiklTheme();
+  const { width } = useWindowDimensions();
+  const hidden = useHidden();
+  const mine = usePersonProfile(username);
+  const me = mine.data?.profile ?? null;
+  const posts = (mine.data?.posts ?? []).filter((p) => !hidden.posts.has(p.id));
+
+  let header;
+  if (me) {
+    header = (
+      <ProfileHeader profile={me} posts={posts.length} followers={me.followers}>
+        {details}
+      </ProfileHeader>
+    );
+  } else {
+    // Counts didn't load (yet): the basics we already have.
+    header = (
+      <View style={[styles.card, { backgroundColor: t.surface2 }]}>
+        <T variant="heading">{profile.name}</T>
+        <T variant="muted">
+          @{username}
+          {profile.area ? ` · ${profile.area}` : ''}
+        </T>
+        {details}
+      </View>
+    );
+  }
+
+  let grid;
+  if (mine.loading) {
+    grid = <ActivityIndicator color={t.muted} accessibilityLabel="Loading your posts" style={{ marginVertical: space.lg }} />;
+  } else if (mine.failed && !mine.data) {
+    grid = <EmptyState emoji="📡" title="Couldn’t load your posts" body="Check your internet connection and try again." action={{ label: 'Try again', onPress: mine.refresh }} />;
+  } else if (posts.length === 0) {
+    grid = (
+      <EmptyState
+        emoji="📸"
+        title="No posts yet"
+        body="Share photos from the plans you go to. Nikl checks new posts before others see them."
+        action={{ label: 'New post', onPress: () => router.push('/create/post') }}
+      />
+    );
+  } else {
+    grid = <PersonPostGrid posts={posts} width={width - space.lg * 2} own />;
+  }
+
+  return (
+    <>
+      {header}
+      <View style={styles.section}>
+        <T variant="heading" accessibilityRole="header">
+          Your posts
+        </T>
+        {grid}
+      </View>
+    </>
   );
 }
 

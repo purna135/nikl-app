@@ -24,6 +24,25 @@ function merge<T>(prev: Loaded<T> | null, next: Loaded<T>): Loaded<T> {
 /** Coming back to a screen reloads it, unless its data is fresher than this. Pull to refresh always reloads. */
 const FRESH_MS = 30_000;
 
+/** When each kind of screen data (a key prefix such as "home:") last went out of date. */
+const staleSince = new Map<string, number>();
+
+/**
+ * Marks screen data as out of date, e.g. after a new post or a block: every screen whose key starts
+ * with one of these prefixes reloads the next time it comes into focus, however fresh its data is.
+ */
+export function invalidate(...prefixes: string[]) {
+  const now = Date.now();
+  prefixes.forEach((prefix) => staleSince.set(prefix, now));
+}
+
+function isStale(key: string, fetchedAt: number): boolean {
+  for (const [prefix, at] of staleSince) {
+    if (key.startsWith(prefix) && at >= fetchedAt) return true;
+  }
+  return false;
+}
+
 /**
  * Loads a screen's data each time the screen comes into focus: when it first opens, when the
  * person comes back from another screen and when the login sheet closes. That keeps follows,
@@ -45,7 +64,8 @@ export function useFocusData<T>(key: string | null, load: () => Promise<T>) {
     useCallback(() => {
       if (key === null) return;
       const last = latest.current;
-      if (last && last.key === key && !last.failed && Date.now() - last.fetchedAt < FRESH_MS) return;
+      const fresh = last && last.key === key && !last.failed && Date.now() - last.fetchedAt < FRESH_MS;
+      if (fresh && !isStale(key, last.fetchedAt)) return;
       let active = true;
       attempt(key, load).then((next) => {
         if (active) setLoaded((prev) => merge(prev, next));

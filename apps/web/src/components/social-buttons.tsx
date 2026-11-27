@@ -33,8 +33,9 @@ export function FollowButton({ clubId, handle }: { clubId: string; handle: strin
     let active = true;
     void (async () => {
       const uid = await currentUserId();
-      const [{ count }, mine] = await Promise.all([
-        supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("target_type", "club").eq("target_id", clubId),
+      // Follow lists are private (DECISIONS.md P19); the count comes from a public function.
+      const [{ data: count }, mine] = await Promise.all([
+        supabase.rpc("follower_count", { p_target_type: "club", p_target_id: clubId }),
         uid
           ? supabase.from("follows").select("follower_id").eq("follower_id", uid).eq("target_type", "club").eq("target_id", clubId).maybeSingle()
           : Promise.resolve({ data: null }),

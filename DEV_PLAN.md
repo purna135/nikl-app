@@ -1,6 +1,6 @@
 # Nikl: Development Plan
 
-> Companion to [PLAN.md](PLAN.md). Written 21 Nov 2026. Status: **week 1 done** (see §7). Decisions and their reasons: [DECISIONS.md](DECISIONS.md). Who does what next: [NEXT_STEPS.md](NEXT_STEPS.md).
+> Companion to [PLAN.md](PLAN.md). Written 21 Nov 2026. Status: **weeks 1–4 done, week 5 in progress** (see §7; what works today: [docs/FEATURES.md](docs/FEATURES.md)). Decisions and their reasons: [DECISIONS.md](DECISIONS.md). Who does what next: [NEXT_STEPS.md](NEXT_STEPS.md).
 > Product direction: the social feed version (`prototype/nikl-social.html`), restyled to be calm, clean and low on colour.
 > Prices, free tiers and policy details below are from what we know today. **Check them again before signing up for anything.**
 
@@ -223,9 +223,9 @@ All weights live in config (remote-tunable via PostHog feature flags). Revisit a
 
 | Feature | App | Web (no install) |
 |---|---|---|
-| Browse feed, explore map/list, search | ✅ | ✅ (feed works without login, limited to public posts) |
+| Browse feed, explore map/list, search | ✅ | ✅ explore map/list and search; the feed stays in the app for now (D9) |
 | Event & club pages | ✅ | ✅ server-rendered, rich WhatsApp/Instagram previews |
-| Follow, like, save | ✅ | ✅ (after phone OTP) |
+| Follow, like, save | ✅ | ✅ follow and save (after phone OTP); likes and the feed are in the app (D9) |
 | RSVP & paid booking with UPI | ✅ UPI intent | ✅ UPI QR (desktop) / intent link (mobile web) / cards |
 | Tickets & QR | ✅ offline wallet | ✅ ticket page + SMS link (online only) |
 | Stories | ✅ watch + post | ✅ watch only |
@@ -297,7 +297,7 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 |---|---|
 | Club pages with Nikl approval (P15): create page → hidden until approved → admin approves → club, events, posts and stories go public | ✅ Built and tested end to end in the browser |
 | Organizer web dashboard: club status, events list, create event (poster, details, weekly repeats, free/paid tiers, draft/publish), manage event (edit details, publish/draft/cancel/restore, cancel single dates) | ✅ Built and tested in the browser |
-| Nikl admin page: review queue, approve / ask for changes (with note), audit log | ✅ Built and tested |
+| Nikl admin page: review queue, approve / ask for changes (with note); every decision is recorded in the `audit_log` table (no screen for it yet) | ✅ Built and tested |
 | Server-side sessions on the web (proxy refreshes cookies; pages read the user inside `<Suspense>`) | ✅ |
 | Poster-to-event (Supabase Edge Function `extract-event`, Claude Haiku 5.5 with structured output, verified login, 30 reads per person per day) | ✅ Built. Login, ownership and limit checks tested. **The real Claude call hasn't run yet**: it needs your Anthropic key. Locally it returns sample details. |
 | Mobile profile set-up after first login (name, username, area, 3+ interests, birth year for 18+) | ✅ Built, typechecks. Not yet tried on a phone. |
@@ -331,6 +331,18 @@ The schedule is tight, but realistic with the stack above if scope stays at P0. 
 | Sample data: events always in the coming week, sample stories stay up two weeks after a reset | ✅ |
 | Independent reviews (T22): database + web 7 findings (3 important: deleted photos still reachable, silent delete failures, photo posts tied to an event by default) and app 6 findings (2 important: share links to a domain Nikl doesn't own yet, a stuck spinner after logging out mid-refresh); 9 fixed, 4 left with reasons | ✅ |
 | Not yet: story viewer, user posts and "+" create (week 5), comments (P1), web feed for logged-in people (D9) | ⏳ |
+
+### Week 5 status (27 Nov 2026): stories, people's posts, moderation
+
+| Item | Status |
+|---|---|
+| Database: stories (club, automatic on first publish, "Your plans"), `story_feed` + seen, people's photo posts (tag a saved event, public/friends), following people, friends = mutual follows, follow and like lists private with public counts, reports (3 people hide), blocks, review switch, admin queue (`moderation_queue`, `moderate_content`, `open_reports`, `resolve_report`) | ✅ Migration `20261127010000`; 35 new database tests (90 in total) |
+| App: big story circles with "Your plans" and seen rings, full-screen story viewer, "+" → New post (1–5 photos, shrunk to 1080 px) and Share your plans, person profiles and post screen, ⋯ menu (report, block, delete), You tab with your posts and their review status | ✅ Typecheck, lint, unit tests, Android bundle; app calls checked against the local database (40 checks). **Not yet seen on a phone.** |
+| Web: `/admin/moderation` (switch, queue with photos, approve/remove with reason, other reports), organizer **New story** and a Stories panel, counts from public functions | ✅ Tested in the browser: story, queue, removal (reason, notification, photos deleted), switch |
+| Guides: `docs/FEATURES.md` and `docs/DEVELOPING.md` (updated every chunk from now on) | ✅ |
+| Independent reviews (T22): database + web 5 findings (removed photos stayed public; who-liked-what was public; club teams weren't told about removals; restore re-created the "New" story), app 5 findings (delete could wipe photos of a post that wasn't deleted); 8 fixed, 2 left with reasons | ✅ |
+| Not yet: story replies, "Join me", friend tags, private accounts / follow requests, "Today" and "Last few spots" automatic stories (need a scheduler), activity screen (week 8) | ⏳ |
+| Known: Expo Doctor flags a few Expo patch versions newer than our 2-week package age rule (e.g. expo 58.1.0, expo-crypto 58.0.9); update with `npx expo install --fix` once they're old enough | ⏳ |
 
 Decisions made during setup:
 - Phone numbers and year of birth sit in an owner-only `profiles_private` table, and Razorpay details in an admin-only `club_payout_settings` table. `profiles` itself is public.

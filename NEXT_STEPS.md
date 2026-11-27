@@ -1,6 +1,6 @@
 # Nikl: Next Steps (who does what)
 
-> Status on **21 Nov 2026**: planning done, weeks 1–3 of development done: login, organizer dashboard, club approval, and now the **map, Explore and public event/club pages** (see [DEV_PLAN.md](DEV_PLAN.md) §7).
+> Status on **27 Nov 2026**: planning done, weeks 1–4 of development done (login, organizer dashboard, club approval, map and Explore, public event/club pages, the Instagram-style social feed); week 5 (stories, people's posts, moderation) in progress. See [DEV_PLAN.md](DEV_PLAN.md) §7, [docs/FEATURES.md](docs/FEATURES.md) for what works today, and [docs/DEVELOPING.md](docs/DEVELOPING.md) for developers.
 > Tick the boxes as you go. Prices and timelines are what we know today, so check them when you sign up.
 
 ## The short version
@@ -19,19 +19,20 @@ Secrets go in your **password manager** and the service's own settings page (Sup
 
 ---
 
-## Try it yourself (weeks 2–4 are done)
+## Try it yourself (weeks 2–5 are done)
 
 1. Make sure **Docker Desktop** is running.
 2. In PowerShell in the project folder, run `pnpm dev:web`.
 3. Open http://localhost:3000/explore: the map of sample Bhubaneswar events. Try **Tonight**, **This weekend**, **Free**, a category, or search "patia". Tap a pin, then open an event page and press **Save**.
 4. Open a club page (e.g. http://localhost:3000/c/patia.pacers) and press **Follow**: you'll be asked to log in with `98765 43210`, code `123456`, then come straight back.
-5. Open http://localhost:3000/organizer. On your local copy this test account is also a **Nikl admin**, so you can approve your own test club at http://localhost:3000/admin/clubs.
+5. Open http://localhost:3000/organizer. On your local copy this test account is also a **Nikl admin** (club approvals at http://localhost:3000/admin/clubs, moderation at http://localhost:3000/admin/moderation). A database reset removes that; ask Claude to add it back, or run the SQL in [docs/DEVELOPING.md](docs/DEVELOPING.md).
 6. Try: create a club page → add an event and **tap the map to drop the venue pin** → approve the club → press **New post**, add a photo and pick the event → it shows on your club page and in the app's Home feed.
-7. On your phone (1.2): **Home** is now the social feed (club stories, posts with Book/RSVP, like, save, follow); tap a club for its profile; your saved events are under **You**. Explore shows the list in Expo Go (the map needs the test build, 1.7).
+7. On your phone (1.2): **Home** is the social feed: tap a story circle to watch stories, tap **+** to post photos or share your plans, use ⋯ on a post to report or block. Your posts (and whether they're still being checked) are under **You**. Explore shows the list in Expo Go (the map needs the test build, 1.7).
+8. Post a photo from the phone, then approve it at http://localhost:3000/admin/moderation: it appears for people who follow you.
 
 The poster button is hidden while AI poster reading is on hold (your call, 21 Nov 2026).
 
-## What Claude needs next (week 4: feed, follow, like, save)
+## What Claude needs next (weeks 5–6)
 
 | # | What | Blocking? |
 |---|---|---|
@@ -121,6 +122,7 @@ The phone map uses Mapbox's native code, which Expo Go can't run, so you install
   - If it asks which account owns the project, pick yours.
   - The build runs in Expo's cloud (about 15–25 minutes; you can close the window, it continues). It ends with a link and a QR code; the build also appears on expo.dev → your project → **Builds**. The free plan includes a monthly allowance of builds, which is plenty for us.
   - If it stops with an error, copy the last lines into the chat (they contain no passwords). Or run these commands in the Claude app's **Terminal** panel, which Claude can read directly.
+- [ ] **If you installed a test build before 27 Nov 2026, build and install it again**: week 5 added photo picking, which needs code that older builds don't have (Expo Go already has it).
 - [ ] Open the build link (or scan the QR code) **on your Android phone** → **Install** → download the APK and open it. Android asks to allow installs from your browser: allow it for this once.
 - [ ] On your PC (Docker Desktop running, phone on the same Wi-Fi): run `pnpm dev:mobile` in the project folder. Open the **Nikl** app on the phone; it finds your PC, or scan the QR code from the terminal with the phone's camera.
 - [ ] Open **Explore**: it starts on the map. Tap a pin for the event card, or switch to **List**.

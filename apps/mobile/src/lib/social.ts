@@ -7,7 +7,7 @@ import { useFocusData } from './focus-data';
 import { supabase } from './supabase';
 
 /**
- * Follow, like and save. Taps show straight away (optimistic), then the database function is
+ * Follow (clubs and people), like and save. Taps show straight away (optimistic), then the database function is
  * called with the state the person wants; on failure the tap is undone and a short message shown.
  *
  * Every screen loads its own data (follows, likes, saves as they were at `fetchedAt`). This module
@@ -15,7 +15,7 @@ import { supabase } from './supabase';
  * a load that started after the database confirmed it has come back (which already includes it).
  */
 
-type Kind = 'follow' | 'like' | 'save';
+type Kind = 'follow' | 'followUser' | 'like' | 'save';
 type Entry = {
   /** The latest tap, still being sent. */
   pending?: { on: boolean; seq: number };
@@ -24,7 +24,7 @@ type Entry = {
 };
 type Taps = Record<Kind, ReadonlyMap<string, Entry>>;
 
-const NO_TAPS: Taps = { follow: new Map(), like: new Map(), save: new Map() };
+const NO_TAPS: Taps = { follow: new Map(), followUser: new Map(), like: new Map(), save: new Map() };
 let taps = NO_TAPS;
 let seq = 0;
 /** Goes up when another person logs in (or out), so late answers for the last person are ignored. */
@@ -71,19 +71,21 @@ function resolve(entry: Entry | undefined, loaded: boolean, fetchedAt: number | 
 
 function send(client: NiklClient, kind: Kind, id: string, on: boolean) {
   if (kind === 'follow') return client.rpc('set_follow_club', { p_club_id: id, p_on: on });
+  if (kind === 'followUser') return client.rpc('set_follow_user', { p_user_id: id, p_on: on });
   if (kind === 'like') return client.rpc('set_like', { p_post_id: id, p_on: on });
   return client.rpc('set_save', { p_event_id: id, p_on: on });
 }
 
 const FAILED_TITLE: Record<Kind, { on: string; off: string }> = {
   follow: { on: 'Couldn’t follow this club', off: 'Couldn’t unfollow this club' },
+  followUser: { on: 'Couldn’t follow this person', off: 'Couldn’t unfollow this person' },
   like: { on: 'Couldn’t like this post', off: 'Couldn’t remove your like' },
   save: { on: 'Couldn’t save this event', off: 'Couldn’t remove this from Saved' },
 };
-const OFFLINE = 'Check your internet connection and try again.';
+export const OFFLINE = 'Check your internet connection and try again.';
 
 /** The database functions raise short, plain messages ("Log in to …", "That post isn't available."). */
-function friendlyMessage(error: { code?: string; message?: string }): string {
+export function friendlyMessage(error: { code?: string; message?: string }): string {
   const message = error.message ?? '';
   const ours = error.code === '22023' || error.code === '54000' || (error.code === '42501' && message.startsWith('Log in'));
   return ours && message ? message : OFFLINE;
@@ -145,12 +147,22 @@ export function useSocial() {
 
   return {
     isFollowing: (clubId: string, loaded: boolean, fetchedAt: number | null) => resolve(current.follow.get(clubId), loaded, fetchedAt),
+    isFollowingUser: (userId: string, loaded: boolean, fetchedAt: number | null) => resolve(current.followUser.get(userId), loaded, fetchedAt),
     isLiked: (postId: string, loaded: boolean, fetchedAt: number | null) => resolve(current.like.get(postId), loaded, fetchedAt),
     isSaved: (eventId: string, loaded: boolean, fetchedAt: number | null) => resolve(current.save.get(eventId), loaded, fetchedAt),
     setFollow: (clubId: string, on: boolean) => act('follow', clubId, on),
+    setFollowUser: (userId: string, on: boolean) => act('followUser', userId, on),
     setLike: (postId: string, on: boolean) => act('like', postId, on),
     setSave: (eventId: string, on: boolean) => act('save', eventId, on),
   };
+}
+
+/**
+ * Blocking someone removes follows both ways in the database. Forget any follow tap for them, so
+ * screens loaded before the block don't keep showing "Following".
+ */
+export function forgetFollowUser(userId: string) {
+  update('followUser', userId, () => ({ confirmed: { on: false, seq: ++seq, at: Date.now() } }));
 }
 
 async function fetchSavedIds(client: NiklClient | null, userId: string | null): Promise<Set<string>> {
@@ -178,6 +190,20 @@ const POST_PHOTO_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|webp)$/i;
 export function postPhotoUrl(path: string | null | undefined): string | null {
   if (!path || !POST_PHOTO_PATH.test(path)) return null;
   return supabase?.storage.from('post-media').getPublicUrl(path).data.publicUrl ?? null;
+}
+
+/**
+ * A person's profile photo. Only photos in Nikl's own storage are shown (a "post-media" path, or its
+ * public link), never a link to another site, for the same reason as post photos (S13).
+ */
+export function personPhotoUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const fromPath = postPhotoUrl(value);
+  if (fromPath) return fromPath;
+  const base = supabase?.storage.from('post-media').getPublicUrl('').data.publicUrl;
+  if (!base) return null;
+  const prefix = base.endsWith('/') ? base : `${base}/`;
+  return value.startsWith(prefix) && POST_PHOTO_PATH.test(value.slice(prefix.length)) ? value : null;
 }
 
 /**

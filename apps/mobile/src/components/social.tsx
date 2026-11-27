@@ -1,7 +1,9 @@
 import { Image } from 'expo-image';
 import { SymbolView, type AndroidSymbol, type SFSymbol } from 'expo-symbols';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { TintName } from '@nikl/tokens';
 import { categoryLook } from '@/lib/explore';
+import { personPhotoUrl } from '@/lib/social';
 import { fontSize, radius, space, touchTarget, useNiklTheme } from '@/theme';
 
 /**
@@ -15,6 +17,9 @@ const ICONS = {
   share: { ios: 'paperplane', android: 'send' },
   bookmark: { ios: 'bookmark', android: 'bookmark' },
   bookmarkOn: { ios: 'bookmark.fill', android: 'bookmark_added' },
+  more: { ios: 'ellipsis', android: 'more_horiz' },
+  plus: { ios: 'plus.app', android: 'add_box' },
+  close: { ios: 'xmark', android: 'close' },
 } as const satisfies Record<string, { ios: SFSymbol; android: AndroidSymbol }>;
 
 export type IconName = keyof typeof ICONS;
@@ -58,15 +63,41 @@ export function IconButton({
 }
 
 /** Up to two initials: "Clay & Chai Studio" → "CC". */
-function initials(name: string): string {
+export function initials(name: string): string {
   const words = name.split(/\s+/).filter((w) => w.length > 0 && !/^[&+\-–—·|/,.]/.test(w));
   return (words.slice(0, 2).map((w) => w[0]).join('') || '?').toUpperCase();
 }
 
-/**
- * A club's round logo, or its initials on the soft tint of its category.
- * `ring` draws the accent ring that means "has a live story".
- */
+/** A story ring around an avatar: accent while there are stories you haven't seen, grey once you've seen them all. */
+export type StoryRing = boolean | 'unseen' | 'seen';
+
+/** A round photo or initials, with an optional story ring. Ringed or not, it takes the same space. */
+function AvatarFrame({ size, ring, photoUrl, initialsText, tint }: { size: number; ring: StoryRing; photoUrl: string | null; initialsText: string; tint: TintName }) {
+  const t = useNiklTheme();
+  const gap = size >= 56 ? 3 : 2;
+  const face = (
+    <View style={[styles.face, { width: size, height: size, borderRadius: size / 2, backgroundColor: photoUrl ? t.surface2 : t.tints[tint] }]}>
+      {photoUrl ? (
+        <Image source={{ uri: photoUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+      ) : (
+        <Text style={[styles.initials, { color: t.onTint, fontSize: Math.round(size * 0.34) }]}>{initialsText}</Text>
+      )}
+    </View>
+  );
+  return (
+    <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {ring ? (
+        <View style={[styles.ring, { backgroundColor: ring === 'seen' ? t.line : t.accent, borderRadius: size }]}>
+          <View style={{ borderWidth: gap, borderColor: t.app, borderRadius: size }}>{face}</View>
+        </View>
+      ) : (
+        <View style={{ padding: 2 + gap }}>{face}</View>
+      )}
+    </View>
+  );
+}
+
+/** A club's round logo, or its initials on the soft tint of its category. */
 export function ClubAvatar({
   name,
   logoUrl,
@@ -78,32 +109,36 @@ export function ClubAvatar({
   logoUrl: string | null;
   category: string;
   size: number;
-  ring?: boolean;
+  ring?: StoryRing;
 }) {
-  const t = useNiklTheme();
-  const look = categoryLook(category);
-  const gap = size >= 56 ? 3 : 2;
-  const face = (
-    <View style={[styles.face, { width: size, height: size, borderRadius: size / 2, backgroundColor: logoUrl ? t.surface2 : t.tints[look.tint] }]}>
-      {logoUrl ? (
-        <Image source={{ uri: logoUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
-      ) : (
-        <Text style={[styles.initials, { color: t.onTint, fontSize: Math.round(size * 0.34) }]}>{initials(name)}</Text>
-      )}
-    </View>
-  );
-  return (
-    <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {ring ? (
-        <View style={[styles.ring, { backgroundColor: t.accent, borderRadius: size }]}>
-          <View style={{ borderWidth: gap, borderColor: t.app, borderRadius: size }}>{face}</View>
-        </View>
-      ) : (
-        // Same footprint as a ringed avatar, so rows line up.
-        <View style={{ padding: 2 + gap }}>{face}</View>
-      )}
-    </View>
-  );
+  return <AvatarFrame size={size} ring={ring} photoUrl={logoUrl} initialsText={initials(name)} tint={categoryLook(category).tint} />;
+}
+
+const PERSON_TINTS: TintName[] = ['pink', 'sun', 'mint', 'sky', 'tang', 'grape'];
+
+/** Same person, same colour: a tint picked from their id. */
+function personTint(seed: string): TintName {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return PERSON_TINTS[hash % PERSON_TINTS.length]!;
+}
+
+/** A person's round photo (only from Nikl's own storage), or their initials on a soft tint. */
+export function PersonAvatar({
+  name,
+  avatarUrl,
+  seed,
+  size,
+  ring = false,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  /** Their user id, so the tint stays the same everywhere. */
+  seed: string;
+  size: number;
+  ring?: StoryRing;
+}) {
+  return <AvatarFrame size={size} ring={ring} photoUrl={personPhotoUrl(avatarUrl)} initialsText={initials(name)} tint={personTint(seed)} />;
 }
 
 /** The small ink tick next to verified clubs. */
@@ -122,16 +157,16 @@ export function VerifiedTick({ size = 14 }: { size?: number }) {
 const SMALL_HEIGHT = 34;
 const smallSlop = (touchTarget - SMALL_HEIGHT) / 2;
 
-/** Follow / Following. Accent when you can follow, quiet once you do. */
+/** Follow / Following. Accent when you can follow, quiet once you do. `name` is the club or person. */
 export function FollowButton({
   following,
   onPress,
-  clubName,
+  name,
   size = 'md',
 }: {
   following: boolean;
   onPress: () => void;
-  clubName: string;
+  name: string;
   size?: 'sm' | 'md';
 }) {
   const t = useNiklTheme();
@@ -140,7 +175,7 @@ export function FollowButton({
       onPress={onPress}
       hitSlop={size === 'sm' ? { top: smallSlop, bottom: smallSlop } : undefined}
       accessibilityRole="togglebutton"
-      accessibilityLabel={`Follow ${clubName}`}
+      accessibilityLabel={`Follow ${name}`}
       accessibilityState={{ checked: following }}
       style={({ pressed }) => [
         size === 'sm' ? styles.followSm : styles.followMd,
